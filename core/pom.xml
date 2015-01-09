@@ -11,5 +11,30 @@
 
     <artifactId>core</artifactId>
 
+    <properties>
+        <!--dropwizzard.version>0.7.1</dropwizzard.version-->
+        <!--hazelcast.version>3.3.2</hazelcast.version-->
+        <!--drools.version>5.6.0.Final</drools.version-->
+        <velocity.version>1.7</velocity.version>
+        <!--pf4j.version>0.9.0</pf4j.version-->
+        <akka.version>2.3.8</akka.version>
+        <xstream.version>1.3.1</xstream.version>
+        <!--squirrel.version>0.3.4</squirrel.version-->
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-actor_2.10</artifactId>
+            <version>${akka.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.velocity</groupId>
+            <artifactId>velocity</artifactId>
+            <version>${velocity.version}</version>
+        </dependency>
+
+    </dependencies>
+
 
 </project>

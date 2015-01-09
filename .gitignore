@@ -2,3 +2,7 @@
 core/core.iml
 stream-machine.iml
 core/target/
+worker/target/
+elasticsearch.plugin/target/
+*.iml
+target/

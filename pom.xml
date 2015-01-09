@@ -9,8 +9,30 @@
     <version>1.0-SNAPSHOT</version>
     <modules>
         <module>core</module>
+        <module>worker</module>
+        <module>elasticsearch.plugin</module>
     </modules>
     <packaging>pom</packaging>
 
+    <properties>
+        <junit.version>4.10</junit.version>
+        <pf4j.version>0.9.0</pf4j.version>
+    </properties>
 
+    <dependencies>
+
+        <dependency>
+            <groupId>ro.fortsoft.pf4j</groupId>
+            <artifactId>pf4j</artifactId>
+            <version>${pf4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
 </project>

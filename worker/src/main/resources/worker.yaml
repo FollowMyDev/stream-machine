@@ -1,0 +1,7 @@
+server:
+  applicationConnectors:
+      - type: http
+        port: 9874
+  adminConnectors:
+      - type: http
+        port: 9974
