@@ -14,7 +14,7 @@ import stream.machine.core.message.DataMessage;
 import stream.machine.core.message.Message;
 import stream.machine.core.model.Event;
 import stream.machine.core.task.store.ConfigurationStore;
-import stream.machine.core.task.store.configuration.MemoryStore;
+import stream.machine.core.task.store.configuration.MemoryConfigurationStore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +45,7 @@ public class TaskManagerTest {
 
     @Test
     public void testFullLifecycle() throws Exception {
-        ConfigurationStore configurationStore = new MemoryStore();
+        ConfigurationStore configurationStore = new MemoryConfigurationStore();
         TaskConfiguration configurationTaskD = build("TaskD","#sum( \"b\" \"a\" \"d\")",null);
         TaskConfiguration configurationTaskC = build("TaskC","#sum( \"c\" \"c\" \"c\")",null);
         List<TaskConfiguration> subTaskB = new ArrayList<TaskConfiguration>();

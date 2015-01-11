@@ -17,9 +17,16 @@
     <properties>
         <junit.version>4.10</junit.version>
         <pf4j.version>0.9.0</pf4j.version>
+        <commons.configuration.version>1.6</commons.configuration.version>
     </properties>
 
     <dependencies>
+
+        <dependency>
+            <groupId>commons-configuration</groupId>
+            <artifactId>commons-configuration</artifactId>
+            <version>${commons.configuration.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>ro.fortsoft.pf4j</groupId>

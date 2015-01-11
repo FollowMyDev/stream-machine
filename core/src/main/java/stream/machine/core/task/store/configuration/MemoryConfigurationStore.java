@@ -3,6 +3,7 @@ package stream.machine.core.task.store.configuration;
 import ro.fortsoft.pf4j.Extension;
 import stream.machine.core.configuration.task.TaskConfiguration;
 import stream.machine.core.exception.ApplicationException;
+import stream.machine.core.lifecycle.ManageableBase;
 import stream.machine.core.task.store.ConfigurationStore;
 import stream.machine.core.task.store.MemoryStoreBase;
 
@@ -12,20 +13,22 @@ import java.util.List;
  * Created by Stephane on 05/01/2015.
  */
 @Extension
-public class MemoryStore implements ConfigurationStore {
+public class MemoryConfigurationStore extends ManageableBase implements ConfigurationStore {
+
     private final MemoryStoreBase<TaskConfiguration> taskConfigurations;
 
-    public MemoryStore() {
+    public MemoryConfigurationStore() {
+       super("MemoryConfigurationStore");
         this.taskConfigurations = new MemoryStoreBase<TaskConfiguration>();
     }
 
     @Override
-    public void open() {
+    public void start() {
 
     }
 
     @Override
-    public void close() {
+    public void stop() {
 
     }
 

@@ -1,5 +1,7 @@
 package elasticsearch.plugin.task.store.configuration;
 
+import elasticsearch.plugin.ElasticsearchPlugin;
+import elasticsearch.plugin.task.store.StoreBase;
 import ro.fortsoft.pf4j.Extension;
 import stream.machine.core.configuration.task.TaskConfiguration;
 import stream.machine.core.exception.ApplicationException;
@@ -12,8 +14,10 @@ import java.util.List;
  */
 
 @Extension
-public class Store implements ConfigurationStore {
-    public Store() {
+public class Store extends StoreBase implements ConfigurationStore {
+
+    public Store(String name) {
+        super(name,"confifuration", ElasticsearchPlugin.getStoreManager());
     }
 
     @Override
@@ -41,13 +45,4 @@ public class Store implements ConfigurationStore {
 
     }
 
-    @Override
-    public void open() {
-
-    }
-
-    @Override
-    public void close() {
-
-    }
 }
