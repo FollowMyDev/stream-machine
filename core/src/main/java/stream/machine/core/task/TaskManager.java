@@ -38,39 +38,45 @@ public class TaskManager extends UntypedActor {
                     });
 
 
-    public static Props props(final String name, final ConfigurationStore configurationStore) {
+    public static Props props(final String name, final ConfigurationStore configurationStore, final int timeoutInSeconds) {
         return Props.create(new Creator<TaskManager>() {
             @Override
             public TaskManager create() throws Exception {
-                return new TaskManager(name, configurationStore);
+                return new TaskManager(name, configurationStore,timeoutInSeconds);
             }
         });
     }
 
     private final ConfigurationStore configurationStore;
     private final String name;
+    private final int timeoutInSeconds;
     private ActorRef task;
     protected LoggingAdapter logger = Logging.getLogger(getContext().system(), this);
 
 
-    //todo: add timeout to configuration
-    public TaskManager(String name, ConfigurationStore configurationStore) {
+    public TaskManager(String name, ConfigurationStore configurationStore, int timeoutInSeconds) {
         this.configurationStore = configurationStore;
         this.name = name;
-        getContext().setReceiveTimeout(Duration.create("300 seconds"));
+        this.timeoutInSeconds = timeoutInSeconds;
+        Timeout timeout = new Timeout(Duration.create(this.timeoutInSeconds, "seconds"));
+        getContext().setReceiveTimeout(timeout.duration());
     }
 
     @Override
     public void preStart() throws Exception {
+        logger.info("Starting task manager ...");
         super.preStart();
         TaskConfiguration taskConfiguration = this.configurationStore.read(name);
         this.task = getContext().actorOf(Task.props(taskConfiguration, getSelf()), taskConfiguration.getName());
         getContext().watch(this.task);
+        logger.info(" ... Task manager started");
     }
 
     @Override
     public void postStop() throws Exception {
+        logger.info("Stopping task manager ...");
         super.postStop();
+        logger.info(" ... Task manager stopped");
     }
 
     @Override
@@ -80,49 +86,46 @@ public class TaskManager extends UntypedActor {
 
     @Override
     public void onReceive(Object message) throws ApplicationException {
+        logger.debug("Message received ... ");
         if (message instanceof Terminated) {
             //todo: manage child termination
+            logger.debug("... message processed");
             return;
         }
         if (message instanceof Timeout) {
-            //todo: manage timeout message => cancel mode + alert
+            ErrorMessage errorMessage = new ErrorMessage("TaskManager", "The message has timed out");
+            getSender().tell(errorMessage, getSelf());
+            logger.debug("... message processed");
             return;
         }
         if (message instanceof DataMessage) {
             DataMessage dataMessage = (DataMessage) message;
             if (dataMessage.getType() == MessageType.QUERY) {
                 dataMessage.setTask(this.name);
-                 this.task.forward(dataMessage, getContext());
+                this.task.forward(dataMessage, getContext());
             }
             if (dataMessage.getType() == MessageType.REPLY) {
-                TaskStatus status  =   dataMessage.getStatusTable().getStatus(dataMessage.getTask());
+                TaskStatus status = dataMessage.getStatusTable().getStatus(dataMessage.getTask());
                 switch (status) {
                     case DONE:
                         dataMessage.getStatusTable().setStatus(dataMessage.getTask(), TaskStatus.COMPLETE);
                         getSender().tell(message, getSelf());
                         break;
                     case ERROR:
-                        throw new ApplicationException(dataMessage.getErrorTable().getError(dataMessage.getTask()));
+                        ErrorMessage errorMessage = new ErrorMessage(dataMessage.getTask(), dataMessage.getErrorTable().getError(dataMessage.getTask()));
+                        getSender().tell(errorMessage, getSelf());
+                        break;
                     case UNDEFINED:
-                        throw new ApplicationException("The processing has failed");
+                        ErrorMessage undefinedMessage = new ErrorMessage("TaskManager", "The processing has failed for unknown reasons");
+                        getSender().tell(undefinedMessage, getSelf());
+                        break;
                 }
             }
-        }
-
-        if (message instanceof ErrorMessage) {
-            ErrorMessage errorMessage = (ErrorMessage) message;
-            throw new ApplicationException(errorMessage.getErrorMessage());
-        }
-    }
-
-    public void process(Event event)  throws ApplicationException
-    {
-        Timeout timeout = new Timeout(Duration.create(3000, "seconds"));
-        Future<Object> future= Patterns.ask(this.getSelf(), event, timeout);
-        try {
-            DataMessage<Event> result = (DataMessage<Event>) Await.result(future, timeout.duration());
-        } catch (Exception error) {
-            throw new ApplicationException("Event processing failed", error);
+            if (message instanceof ErrorMessage) {
+                ErrorMessage errorMessage = (ErrorMessage) message;
+                getSender().tell(errorMessage, getSelf());
+            }
+            logger.debug("... message processed");
         }
     }
 }

@@ -1,4 +1,4 @@
-package stream.machine.core.lifecycle;
+package stream.machine.core.manager;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;

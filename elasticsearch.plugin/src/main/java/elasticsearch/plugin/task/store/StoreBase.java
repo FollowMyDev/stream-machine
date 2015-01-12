@@ -1,11 +1,10 @@
 package elasticsearch.plugin.task.store;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.elasticsearch.client.Client;
 
 
 import stream.machine.core.exception.ApplicationException;
-import stream.machine.core.lifecycle.ManageableBase;
+import stream.machine.core.manager.ManageableBase;
 import stream.machine.core.task.store.Store;
 
 /**

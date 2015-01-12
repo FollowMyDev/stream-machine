@@ -3,7 +3,7 @@ package stream.machine.core.task.store.configuration;
 import ro.fortsoft.pf4j.Extension;
 import stream.machine.core.configuration.task.TaskConfiguration;
 import stream.machine.core.exception.ApplicationException;
-import stream.machine.core.lifecycle.ManageableBase;
+import stream.machine.core.manager.ManageableBase;
 import stream.machine.core.task.store.ConfigurationStore;
 import stream.machine.core.task.store.MemoryStoreBase;
 

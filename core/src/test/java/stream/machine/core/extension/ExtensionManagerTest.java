@@ -5,8 +5,6 @@ import org.junit.Test;
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.task.store.ConfigurationStore;
 
-import static org.junit.Assert.*;
-
 public class ExtensionManagerTest {
 
     @Test
@@ -14,13 +12,13 @@ public class ExtensionManagerTest {
         ExtensionManager manager = new ExtensionManager();
         ConfigurationStore store = null;
         try {
-            manager.load();
-            store = manager.getConfigurationStore("stream.machine.core.task.store.configuration.MemoryStore");
+            manager.start();
+            store = manager.getConfigurationStore("stream.machine.core.task.store.configuration.MemoryConfigurationStore");
         } catch (ApplicationException error) {
             Assert.fail(error.getMessage());
         }
         finally {
-            manager.unload();
+            manager.stop();
         }
         Assert.assertNotNull(store);
     }

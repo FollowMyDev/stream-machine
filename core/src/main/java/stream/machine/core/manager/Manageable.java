@@ -1,4 +1,4 @@
-package stream.machine.core.lifecycle;
+package stream.machine.core.manager;
 
 import stream.machine.core.exception.ApplicationException;
 

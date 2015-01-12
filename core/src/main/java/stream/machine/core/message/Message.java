@@ -1,8 +1,5 @@
 package stream.machine.core.message;
 
-import stream.machine.core.exception.ApplicationException;
-import stream.machine.core.task.TaskStatus;
-
 /**
  * Created by Stephane on 04/01/2015.
  */

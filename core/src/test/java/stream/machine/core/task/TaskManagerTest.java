@@ -56,7 +56,7 @@ public class TaskManagerTest {
         subTaskA.add(configurationTaskB);
         TaskConfiguration configurationTaskA = build("TaskA","#sum( \"a\" \"a\" \"b\")",subTaskA);
         configurationStore.save(configurationTaskA);
-        taskManager = system.actorOf(TaskManager.props("TaskA",configurationStore),"TaskManager");
+        taskManager = system.actorOf(TaskManager.props("TaskA",configurationStore,5),"TaskManager");
 
         Event event = new Event();
         event.put("a", 1);

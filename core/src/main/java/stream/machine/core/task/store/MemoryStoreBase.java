@@ -1,8 +1,6 @@
 package stream.machine.core.task.store;
 
-import stream.machine.core.configuration.task.TaskConfiguration;
 import stream.machine.core.exception.ApplicationException;
-import stream.machine.core.task.store.ConfigurationStore;
 
 import java.util.ArrayList;
 import java.util.HashMap;

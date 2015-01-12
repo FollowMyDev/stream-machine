@@ -16,7 +16,7 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 import stream.machine.core.exception.ApplicationException;
-import stream.machine.core.lifecycle.ManageableBase;
+import stream.machine.core.manager.ManageableBase;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
