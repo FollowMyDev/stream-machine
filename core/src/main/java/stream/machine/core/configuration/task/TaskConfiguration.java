@@ -8,20 +8,14 @@ import java.util.List;
 public class TaskConfiguration {
     private final String name;
     private final String taskClass;
-    private final List<TaskConfiguration> subTasks;
 
-    public TaskConfiguration(String name, String taskClass, List<TaskConfiguration> subTasks) {
+    public TaskConfiguration(String name, String taskClass) {
         this.name = name;
         this.taskClass = taskClass;
-        this.subTasks = subTasks;
     }
 
     public String getTaskClass() {
         return taskClass;
-    }
-
-    public List<TaskConfiguration> getSubTasks() {
-        return subTasks;
     }
 
     public String getName() {

@@ -6,6 +6,6 @@ import stream.machine.core.model.Alert;
 /**
  * Created by Stephane on 07/12/2014.
  */
-public interface AlertStore extends Store,ExtensionPoint{
+public interface AlertStore extends Store, ExtensionPoint {
     Alert save(final Alert alert);
 }

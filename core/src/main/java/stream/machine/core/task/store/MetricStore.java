@@ -8,5 +8,6 @@ import stream.machine.core.model.Query;
  */
 public interface MetricStore extends Store {
     Metric save(final Metric metric);
+
     Metric compute(final Query query);
 }

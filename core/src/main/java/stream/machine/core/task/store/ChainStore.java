@@ -8,5 +8,6 @@ import stream.machine.core.model.Query;
  */
 public interface ChainStore extends Store {
     Chain upsert(final Chain event);
+
     Chain correlate(final Query query);
 }

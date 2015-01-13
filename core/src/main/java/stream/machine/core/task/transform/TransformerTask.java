@@ -10,9 +10,9 @@ import stream.machine.core.task.Task;
 /**
  * Created by Stephane on 07/12/2014.
  */
-public abstract class TransformerTask<Q,R> extends Task {
-    protected TransformerTask(TaskConfiguration configuration,ActorRef superTask) {
-        super(configuration,superTask);
+public abstract class TransformerTask<Q, R> extends Task {
+    protected TransformerTask(TaskConfiguration configuration, ActorRef superTask, ActorRef subTask) {
+        super(configuration, superTask, subTask);
     }
 
     protected abstract R transform(final Q data) throws ApplicationException;
@@ -21,7 +21,7 @@ public abstract class TransformerTask<Q,R> extends Task {
     protected Message doProcess(Message message) throws ApplicationException {
         DataMessage<Q> query = (DataMessage<Q>) message;
         R result = transform(query.getData());
-        return new DataMessage<R>(getName(),message,result);
+        return new DataMessage<R>(getName(), message, result);
     }
 
 }

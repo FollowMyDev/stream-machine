@@ -10,7 +10,9 @@ import akka.util.Timeout;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
+import stream.machine.core.configuration.task.TaskChainConfiguration;
 import stream.machine.core.configuration.task.TaskConfiguration;
+import stream.machine.core.configuration.task.TaskManagerConfiguration;
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.message.DataMessage;
 import stream.machine.core.message.ErrorMessage;
@@ -38,38 +40,62 @@ public class TaskManager extends UntypedActor {
                     });
 
 
-    public static Props props(final String name, final ConfigurationStore configurationStore, final int timeoutInSeconds) {
+    public static Props props(final String name, final ConfigurationStore configurationStore) {
         return Props.create(new Creator<TaskManager>() {
             @Override
             public TaskManager create() throws Exception {
-                return new TaskManager(name, configurationStore,timeoutInSeconds);
+                return new TaskManager(name, configurationStore);
             }
         });
     }
 
     private final ConfigurationStore configurationStore;
     private final String name;
-    private final int timeoutInSeconds;
-    private ActorRef task;
+    private ActorRef subTask;
     protected LoggingAdapter logger = Logging.getLogger(getContext().system(), this);
 
 
-    public TaskManager(String name, ConfigurationStore configurationStore, int timeoutInSeconds) {
+    public TaskManager(String name, ConfigurationStore configurationStore) {
         this.configurationStore = configurationStore;
         this.name = name;
-        this.timeoutInSeconds = timeoutInSeconds;
-        Timeout timeout = new Timeout(Duration.create(this.timeoutInSeconds, "seconds"));
-        getContext().setReceiveTimeout(timeout.duration());
+
     }
 
     @Override
     public void preStart() throws Exception {
+
         logger.info("Starting task manager ...");
         super.preStart();
-        TaskConfiguration taskConfiguration = this.configurationStore.read(name);
-        this.task = getContext().actorOf(Task.props(taskConfiguration, getSelf()), taskConfiguration.getName());
-        getContext().watch(this.task);
-        logger.info(" ... Task manager started");
+
+        TaskManagerConfiguration taskManagerConfiguration = this.configurationStore.readTaskManager(name);
+        if (taskManagerConfiguration != null) {
+            TaskChainConfiguration taskChain = taskManagerConfiguration.getSubTasks();
+            if (taskChain != null) {
+                ActorRef subTask = buildSubTask(taskChain);
+                this.subTask = subTask;
+                Timeout timeout = new Timeout(Duration.create(taskManagerConfiguration.getTimeoutInSeconds(), "seconds"));
+                getContext().setReceiveTimeout(timeout.duration());
+            } else {
+                logger.error(String.format("Cannot find configuration for task manager %s", name));
+                throw new ApplicationException(String.format("Cannot find configuration for task manager %s", name));
+            }
+            logger.info(" ... Task manager started");
+        }
+    }
+
+    private ActorRef buildSubTask(TaskChainConfiguration taskChainConfiguration) throws ApplicationException {
+        if (taskChainConfiguration == null) return null;
+
+        String subTaskName = taskChainConfiguration.getName();
+        TaskConfiguration subTaskConfiguration = this.configurationStore.readTask(subTaskName);
+        if (subTaskConfiguration == null) {
+            logger.error(String.format("Cannot find configuration for task %s", subTaskName));
+            throw new ApplicationException(String.format("Cannot find configuration for task %s", subTaskName));
+        }
+
+        ActorRef subTask = getContext().actorOf(Task.props(subTaskConfiguration, getSelf(), buildSubTask(taskChainConfiguration.getSubTask())), subTaskConfiguration.getName());
+        getContext().watch(subTask);
+        return subTask;
     }
 
     @Override
@@ -102,17 +128,16 @@ public class TaskManager extends UntypedActor {
             DataMessage dataMessage = (DataMessage) message;
             if (dataMessage.getType() == MessageType.QUERY) {
                 dataMessage.setTask(this.name);
-                this.task.forward(dataMessage, getContext());
+                this.subTask.forward(dataMessage, getContext());
             }
             if (dataMessage.getType() == MessageType.REPLY) {
-                TaskStatus status = dataMessage.getStatusTable().getStatus(dataMessage.getTask());
+                TaskStatus status = dataMessage.getStatus();
                 switch (status) {
                     case DONE:
-                        dataMessage.getStatusTable().setStatus(dataMessage.getTask(), TaskStatus.COMPLETE);
                         getSender().tell(message, getSelf());
                         break;
                     case ERROR:
-                        ErrorMessage errorMessage = new ErrorMessage(dataMessage.getTask(), dataMessage.getErrorTable().getError(dataMessage.getTask()));
+                        ErrorMessage errorMessage = new ErrorMessage(dataMessage.getTask(), String.format("Sub task %s has failed!", dataMessage.getTask()));
                         getSender().tell(errorMessage, getSelf());
                         break;
                     case UNDEFINED:

@@ -31,7 +31,7 @@ public class AgentManager extends ManageableBase implements Managed {
         super("AgentManger");
         this.configurationStore = configurationStore;
         this.system = ActorSystem.create("TransformTasks");
-        this.taskManager = system.actorOf(TaskManager.props("TaskManager", configurationStore,timeoutInSeconds));
+        this.taskManager = system.actorOf(TaskManager.props("TaskManager", configurationStore));
         this.timeoutInSeconds =timeoutInSeconds;
     }
 
@@ -52,7 +52,6 @@ public class AgentManager extends ManageableBase implements Managed {
         logger.debug(String.format("Start processing event %s ...", event.getKey().toString()));
         Timeout timeout = new Timeout(Duration.create(this.timeoutInSeconds, "seconds"));
         Message query = new DataMessage<Event>("TaskManager",event);
-        query.getStatusTable().setStatus("TaskManager", TaskStatus.INITIAL);
         Future<Object> future= Patterns.ask(taskManager, query, timeout);
         try {
             Message reply = (DataMessage<Event>) Await.result(future, timeout.duration());

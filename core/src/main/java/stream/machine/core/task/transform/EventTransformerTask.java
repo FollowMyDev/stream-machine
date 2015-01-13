@@ -4,7 +4,7 @@ import akka.actor.ActorRef;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import stream.machine.core.configuration.task.TaskConfiguration;
-import stream.machine.core.configuration.task.TransformerConfiguration;
+import stream.machine.core.configuration.task.TransformerTaskConfiguration;
 import stream.machine.core.model.Event;
 
 import java.io.StringWriter;
@@ -12,17 +12,17 @@ import java.io.StringWriter;
 /**
  * Created by Stephane on 07/12/2014.
  */
-public class EventTransformerTask extends TransformerTask<Event,Event> {
+public class EventTransformerTask extends TransformerTask<Event, Event> {
 
 
     private VelocityEngine engine;
     private final String template;
 
 
-    public EventTransformerTask(TaskConfiguration configuration,ActorRef superTask) {
-        super(configuration,superTask);
-        TransformerConfiguration transformerConfiguration = (TransformerConfiguration) configuration;
-        this.template = transformerConfiguration.getTemplate();
+    public EventTransformerTask(TaskConfiguration configuration, ActorRef superTask, ActorRef subTask) {
+        super(configuration, superTask, subTask);
+        TransformerTaskConfiguration transformerTaskConfiguration = (TransformerTaskConfiguration) configuration;
+        this.template = transformerTaskConfiguration.getTemplate();
     }
 
     @Override
@@ -37,7 +37,7 @@ public class EventTransformerTask extends TransformerTask<Event,Event> {
                 writer,
                 "LOG",  // used for logging
                 template);
-         return event;
+        return event;
     }
 
     @Override

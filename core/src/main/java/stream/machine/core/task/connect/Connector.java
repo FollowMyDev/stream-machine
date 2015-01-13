@@ -8,7 +8,8 @@ import java.util.UUID;
 /**
  * Created by Stephane on 06/12/2014.
  */
-public interface Connector  {
+public interface Connector {
     boolean connect(Stream<Event> eventStream);
+
     boolean disconnect(UUID streamId);
 }

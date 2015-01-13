@@ -8,7 +8,7 @@ import org.junit.*;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
-import stream.machine.core.configuration.task.TransformerConfiguration;
+import stream.machine.core.configuration.task.TransformerTaskConfiguration;
 import stream.machine.core.model.Event;
 import stream.machine.core.message.DataMessage;
 import stream.machine.core.message.Message;
@@ -56,8 +56,8 @@ public class EventTransformerTaskTest {
         template.append(" ");
         template.append("#sum( \"a\" \"b\" \"c\")");
 
-        TransformerConfiguration configuration = new TransformerConfiguration(template.toString(),"TransformerTask","stream.machine.core.task.transform.EventTransformerTask",null);
-        transformerTask = system.actorOf(Task.props(configuration,ActorRef.noSender()), configuration.getName());
+        TransformerTaskConfiguration configuration = new TransformerTaskConfiguration(template.toString(),"TransformerTask","stream.machine.core.task.transform.EventTransformerTask");
+        transformerTask = system.actorOf(Task.props(configuration,ActorRef.noSender(), null), configuration.getTaskClass());
 
         Event event = new Event();
         event.put("a", 1);
@@ -65,7 +65,6 @@ public class EventTransformerTaskTest {
 
         Timeout timeout = new Timeout(Duration.create(3000, "seconds"));
         Message message = new DataMessage<Event>("TaskManager",event);
-        message.getStatusTable().setStatus(configuration.getName(), TaskStatus.INITIAL);
         Future<Object> future= Patterns.ask(transformerTask,message , timeout);
         DataMessage<Event> result = (DataMessage<Event>) Await.result(future, timeout.duration());
 

@@ -1,18 +1,18 @@
 package stream.machine.core.message;
 
+import stream.machine.core.task.TaskStatus;
+
 /**
  * Created by Stephane on 06/01/2015.
  */
 public abstract class MessageBase implements Message {
-    private final StatusTable statusTable;
-    private final ErrorTable errorTable;
-    private String task;;
+    private TaskStatus status;
+    private String task;
+    ;
     private final MessageType type;
 
     public MessageBase(String task) {
-        this.statusTable = new StatusTable();
-        this.errorTable = new ErrorTable();
-        this.task = task;
+        this.status = TaskStatus.INITIAL;
         this.type = MessageType.QUERY;
     }
 
@@ -20,23 +20,22 @@ public abstract class MessageBase implements Message {
         this.task = task;
         this.type = MessageType.REPLY;
         if (message != null) {
-            this.statusTable = message.getStatusTable();
-            this.errorTable = message.getErrorTable();
+            this.status = message.getStatus();
         } else {
-            this.statusTable = new StatusTable();
-            this.errorTable = new ErrorTable();
+            this.status = TaskStatus.INITIAL;
         }
     }
 
     @Override
-    public StatusTable getStatusTable() {
-        return statusTable;
+    public TaskStatus getStatus() {
+        return this.status;
     }
 
     @Override
-    public ErrorTable getErrorTable() {
-        return errorTable;
+    public void setStatus(TaskStatus status) {
+        this.status = status;
     }
+
 
     @Override
     synchronized public String getTask() {

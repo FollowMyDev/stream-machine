@@ -9,6 +9,8 @@ import java.util.UUID;
  */
 public interface RuleStore extends Store {
     Rule create(final Rule rule);
+
     Rule update(final Rule rule);
+
     Rule read(final UUID ruleId);
 }

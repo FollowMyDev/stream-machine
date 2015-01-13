@@ -7,11 +7,11 @@ import java.util.List;
 /**
  * Created by Stephane on 04/01/2015.
  */
-public class TransformerConfiguration extends TaskConfiguration {
+public class TransformerTaskConfiguration extends TaskConfiguration {
     private final String template;
 
-    public TransformerConfiguration(String template,String name, String taskClass, List<TaskConfiguration> subTasks) {
-        super(name, taskClass, subTasks);
+    public TransformerTaskConfiguration(String template, String name, String taskClass) {
+        super(name, taskClass);
         this.template = template;
     }
 

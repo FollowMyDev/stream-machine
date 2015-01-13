@@ -2,6 +2,7 @@ package stream.machine.core.task.store.configuration;
 
 import ro.fortsoft.pf4j.Extension;
 import stream.machine.core.configuration.task.TaskConfiguration;
+import stream.machine.core.configuration.task.TaskManagerConfiguration;
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.manager.ManageableBase;
 import stream.machine.core.task.store.ConfigurationStore;
@@ -16,10 +17,12 @@ import java.util.List;
 public class MemoryConfigurationStore extends ManageableBase implements ConfigurationStore {
 
     private final MemoryStoreBase<TaskConfiguration> taskConfigurations;
+    private final MemoryStoreBase<TaskManagerConfiguration> taskMnagerConfigurations;
 
     public MemoryConfigurationStore() {
-       super("MemoryConfigurationStore");
+        super("MemoryConfigurationStore");
         this.taskConfigurations = new MemoryStoreBase<TaskConfiguration>();
+        this.taskMnagerConfigurations = new MemoryStoreBase<TaskManagerConfiguration>();
     }
 
     @Override
@@ -33,32 +36,61 @@ public class MemoryConfigurationStore extends ManageableBase implements Configur
     }
 
     @Override
-    public List<TaskConfiguration> readAll() {
+    public List<TaskConfiguration> readAllTask() {
         return this.taskConfigurations.readAll();
     }
 
     @Override
-    public TaskConfiguration read(String taskName) {
+    public TaskConfiguration readTask(String taskName) {
         return this.taskConfigurations.read(taskName);
     }
 
     @Override
-    public void save(TaskConfiguration configuration) throws ApplicationException {
+    public void saveTask(TaskConfiguration configuration) throws ApplicationException {
         if (configuration != null) {
             this.taskConfigurations.save(configuration.getName(), configuration);
         }
     }
 
     @Override
-    public void update(TaskConfiguration configuration) throws ApplicationException {
+    public void updateTask(TaskConfiguration configuration) throws ApplicationException {
         if (configuration != null) {
             this.taskConfigurations.update(configuration.getName(), configuration);
         }
     }
 
     @Override
-    public void delete(String taskName) throws ApplicationException {
+    public void deleteTask(String taskName) throws ApplicationException {
         this.taskConfigurations.delete(taskName);
+    }
+
+    @Override
+    public List<TaskManagerConfiguration> readAllTaskManager() {
+        return this.taskMnagerConfigurations.readAll();
+    }
+
+    @Override
+    public TaskManagerConfiguration readTaskManager(String taskNameManager) {
+        return this.taskMnagerConfigurations.read(taskNameManager);
+    }
+
+    @Override
+    public void saveTaskManager(TaskManagerConfiguration configuration) throws ApplicationException {
+        if (configuration != null) {
+            this.taskMnagerConfigurations.save(configuration.getName(), configuration);
+        }
+    }
+
+    @Override
+    public void updateTaskManager(TaskManagerConfiguration configuration) throws ApplicationException {
+        if (configuration != null) {
+            this.taskMnagerConfigurations.update(configuration.getName(), configuration);
+        }
+    }
+
+    @Override
+    public void deleteTaskManager(String taskNameManager) throws ApplicationException {
+        this.taskMnagerConfigurations.delete(taskNameManager);
     }
 
 

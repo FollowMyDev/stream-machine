@@ -7,7 +7,6 @@ public enum TaskStatus {
     INITIAL,
     PROCESSING,
     DONE,
-    COMPLETE,
     ERROR,
     UNDEFINED
 }

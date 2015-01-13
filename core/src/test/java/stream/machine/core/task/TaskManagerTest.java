@@ -8,8 +8,10 @@ import org.junit.*;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
+import stream.machine.core.configuration.task.TaskChainConfiguration;
 import stream.machine.core.configuration.task.TaskConfiguration;
-import stream.machine.core.configuration.task.TransformerConfiguration;
+import stream.machine.core.configuration.task.TaskManagerConfiguration;
+import stream.machine.core.configuration.task.TransformerTaskConfiguration;
 import stream.machine.core.message.DataMessage;
 import stream.machine.core.message.Message;
 import stream.machine.core.model.Event;
@@ -46,24 +48,30 @@ public class TaskManagerTest {
     @Test
     public void testFullLifecycle() throws Exception {
         ConfigurationStore configurationStore = new MemoryConfigurationStore();
-        TaskConfiguration configurationTaskD = build("TaskD","#sum( \"b\" \"a\" \"d\")",null);
-        TaskConfiguration configurationTaskC = build("TaskC","#sum( \"c\" \"c\" \"c\")",null);
-        List<TaskConfiguration> subTaskB = new ArrayList<TaskConfiguration>();
-        subTaskB.add(configurationTaskD);
-        subTaskB.add(configurationTaskC);
-        TaskConfiguration configurationTaskB = build("TaskB","#sum( \"b\" \"a\" \"c\")",subTaskB);
-        List<TaskConfiguration> subTaskA = new ArrayList<TaskConfiguration>();
-        subTaskA.add(configurationTaskB);
-        TaskConfiguration configurationTaskA = build("TaskA","#sum( \"a\" \"a\" \"b\")",subTaskA);
-        configurationStore.save(configurationTaskA);
-        taskManager = system.actorOf(TaskManager.props("TaskA",configurationStore,5),"TaskManager");
+        TaskConfiguration configurationTaskD = build("TaskD","#sum( \"b\" \"a\" \"d\")");
+        configurationStore.saveTask(configurationTaskD);
+        TaskConfiguration configurationTaskC = build("TaskC","#sum( \"c\" \"c\" \"c\")");
+        configurationStore.saveTask(configurationTaskC);
+        TaskConfiguration configurationTaskB = build("TaskB","#sum( \"b\" \"a\" \"c\")");
+        configurationStore.saveTask(configurationTaskB);
+        TaskConfiguration configurationTaskA = build("TaskA","#sum( \"a\" \"a\" \"b\")");
+        configurationStore.saveTask(configurationTaskA);
+
+        TaskChainConfiguration taskChainConfigurationD = new TaskChainConfiguration("TaskD", null);
+        TaskChainConfiguration taskChainConfigurationC = new TaskChainConfiguration("TaskC", taskChainConfigurationD);
+        TaskChainConfiguration taskChainConfigurationB = new TaskChainConfiguration("TaskB", taskChainConfigurationC);
+        TaskChainConfiguration taskChainConfigurationA = new TaskChainConfiguration("TaskA", taskChainConfigurationB);
+
+        TaskManagerConfiguration taskManagerConfiguration = new TaskManagerConfiguration("TaskManager","",taskChainConfigurationA,5);
+        configurationStore.saveTaskManager(taskManagerConfiguration);
+
+        taskManager = system.actorOf(TaskManager.props("TaskManager",configurationStore),"TaskManager");
 
         Event event = new Event();
         event.put("a", 1);
 
         Timeout timeout = new Timeout(Duration.create(3000, "seconds"));
         Message message = new DataMessage<Event>("/deadLetters",event);
-        message.getStatusTable().setStatus("TaskA", TaskStatus.INITIAL);
         Future<Object> futureA= Patterns.ask(taskManager, message, timeout);
         DataMessage<Event> result = (DataMessage<Event>) Await.result(futureA, timeout.duration());
 
@@ -74,7 +82,7 @@ public class TaskManagerTest {
 
     }
 
-    private TaskConfiguration build(String taskName,String taskTemplate, List<TaskConfiguration> subTasks)
+    private TaskConfiguration build(String taskName,String taskTemplate)
     {
         StringBuilder template = new StringBuilder("");
         template.append("#macro( put $key $value )");
@@ -90,7 +98,7 @@ public class TaskManagerTest {
         template.append(" ");
         template.append(taskTemplate);
 
-       return new TransformerConfiguration(template.toString(),taskName,"stream.machine.core.task.transform.EventTransformerTask",subTasks);
+       return new TransformerTaskConfiguration(template.toString(),taskName,"stream.machine.core.task.transform.EventTransformerTask");
 
     }
 }

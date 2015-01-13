@@ -19,13 +19,13 @@ import java.util.Map;
  */
 public abstract class Task extends UntypedActor {
 
-    public static Props props(final TaskConfiguration configuration, final ActorRef superTask) {
+    public static Props props(final TaskConfiguration configuration, final ActorRef superTask, final ActorRef subTask) {
         return Props.create(new Creator<Task>() {
             @Override
             public Task create() throws Exception {
                 Class<Task> taskClass = (Class<Task>) Class.forName(configuration.getTaskClass());
-                Constructor<Task> ctor = taskClass.getDeclaredConstructor(TaskConfiguration.class, ActorRef.class);
-                Task task = ctor.newInstance(configuration, superTask);
+                Constructor<Task> ctor = taskClass.getDeclaredConstructor(TaskConfiguration.class, ActorRef.class, ActorRef.class);
+                Task task = ctor.newInstance(configuration, superTask, subTask);
                 return task;
             }
         });
@@ -33,19 +33,13 @@ public abstract class Task extends UntypedActor {
 
     private final String name;
     private final ActorRef superTask;
-    private final Map<String, ActorRef> subTasks;
+    private final ActorRef subTask;
     protected LoggingAdapter logger = Logging.getLogger(getContext().system(), this);
 
-    protected Task(TaskConfiguration configuration, ActorRef superTask) {
+    protected Task(TaskConfiguration configuration, ActorRef superTask, ActorRef subTask) {
         this.name = configuration.getName();
         this.superTask = superTask;
-        this.subTasks = new HashMap<String, ActorRef>();
-        if (configuration.getSubTasks() != null) {
-            for (TaskConfiguration subTaskConfiguration : configuration.getSubTasks()) {
-                ActorRef subTask = getContext().actorOf(Task.props(subTaskConfiguration, getSelf()), subTaskConfiguration.getName());
-                this.subTasks.put(subTaskConfiguration.getName(), subTask);
-            }
-        }
+        this.subTask = subTask;
     }
 
     public String getName() {
@@ -59,23 +53,18 @@ public abstract class Task extends UntypedActor {
 
         if (message instanceof ErrorMessage) {
             ErrorMessage errorMessage = (ErrorMessage) message;
-            TaskStatus currentStatus = errorMessage.getStatusTable().getStatus(getName());
-            if (currentStatus != TaskStatus.ERROR) {
-                errorMessage.getStatusTable().setStatus(getName(), TaskStatus.ERROR);
-                String error = "A sub task has failed";
-                errorMessage.getErrorTable().setError(getName(), error);
-                sendUp(errorMessage);
-            }
+            errorMessage.setTask(this.name);
+            sendUp(errorMessage);
         }
 
         if (message instanceof DataMessage) {
             if (((Message) message).getType() == MessageType.QUERY) {
                 DataMessage query = (DataMessage) message;
                 Message reply = processMessage(query);
-                TaskStatus status = reply.getStatusTable().getStatus(getName());
+                TaskStatus status = reply.getStatus();
                 if (status == TaskStatus.DONE) {
-                    if (this.subTasks.size() > 0) {
-                        // Sub tasks are allowed to process
+                    if (this.subTask != null) {
+                        // Sub task is allowed to process
                         sendDown(query);
                     } else {
                         // Notify super task of the success
@@ -89,55 +78,35 @@ public abstract class Task extends UntypedActor {
             }
             if (((DataMessage) message).getType() == MessageType.REPLY) {
                 DataMessage reply = ((DataMessage) message);
-                reply.getStatusTable().setStatus(reply.getTask(), TaskStatus.COMPLETE);
-                if (isComplete(reply.getStatusTable())) {
-                    reply.setTask(getName());
-                    sendUp(reply);
-                }
+                reply.setTask(this.name);
+                sendUp(reply);
             }
         }
     }
 
-    protected boolean isComplete(StatusTable statusTable) throws ApplicationException {
-        int subTaskCount = this.subTasks.size();
-        int subTaskComplete = 0;
-        if (subTaskCount > 0) {
-            for (String subTask : this.subTasks.keySet()) {
-                TaskStatus subTaskStatus = statusTable.getStatus(subTask);
-                switch (subTaskStatus) {
-                    case COMPLETE:
-                        subTaskComplete++;
-                        break;
-                }
-            }
-        }
-        return (subTaskComplete == subTaskCount);
-    }
 
     private Message processMessage(Message query) {
-        query.getStatusTable().setStatus(getName(), TaskStatus.PROCESSING);
         try {
+            query.setStatus(TaskStatus.PROCESSING);
             Message reply = doProcess(query);
-            query.getStatusTable().setStatus(getName(), TaskStatus.DONE);
+            reply.setStatus(TaskStatus.DONE);
             return reply;
         } catch (ApplicationException error) {
-            ErrorMessage reply = new ErrorMessage(getName(),query,error.getMessage());
-            reply.getStatusTable().setStatus(getName(), TaskStatus.ERROR);
-            reply.getErrorTable().setError(getName(), error.getMessage());
+            ErrorMessage reply = new ErrorMessage(getName(), query, error.getMessage());
             return reply;
         }
-
     }
 
     private void sendUp(Message message) {
-        ActorRef sender = (this.superTask == null)? getSender(): this.superTask;
-        sender.forward(message, getContext());
+        ActorRef superTask = (this.superTask == null) ? getSender() : this.superTask;
+        message.setTask(this.name);
+        superTask.forward(message, getContext());
     }
 
     private void sendDown(Message message) {
-        for (Map.Entry<String, ActorRef> subTask : this.subTasks.entrySet()) {
-            message.getStatusTable().setStatus(subTask.getKey(), TaskStatus.INITIAL);
-            subTask.getValue().forward(message, getContext());
+        if (this.subTask != null) {
+            message.setTask(this.name);
+            subTask.forward(message, getContext());
         }
     }
 
