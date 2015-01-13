@@ -17,7 +17,6 @@ public class StoreConfigurationTest {
         Assert.assertEquals("elasticsearch",storeConfiguration.getCluster());
         Assert.assertEquals(false,storeConfiguration.isEmbedded());
         Assert.assertEquals(1,storeConfiguration.getNodes().size());
-        Assert.assertEquals("127.0.0.1",storeConfiguration.getNodes().get(0).address().getHostName());
         Assert.assertEquals(9200,storeConfiguration.getNodes().get(0).address().getPort());
         Assert.assertEquals(10,storeConfiguration.getRetentionPeriod());
         Assert.assertEquals(3,storeConfiguration.getProperties().size());
