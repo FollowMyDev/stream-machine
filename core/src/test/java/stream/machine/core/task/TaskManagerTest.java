@@ -12,37 +12,42 @@ import stream.machine.core.configuration.task.TaskChainConfiguration;
 import stream.machine.core.configuration.task.TaskConfiguration;
 import stream.machine.core.configuration.task.TaskManagerConfiguration;
 import stream.machine.core.configuration.task.TransformerTaskConfiguration;
+import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.message.DataMessage;
+import stream.machine.core.message.ErrorMessage;
 import stream.machine.core.message.Message;
 import stream.machine.core.model.Event;
 import stream.machine.core.task.store.ConfigurationStore;
 import stream.machine.core.task.store.configuration.MemoryConfigurationStore;
+import stream.machine.core.task.transform.TransformerTask;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class TaskManagerTest {
+
     private static ActorSystem system;
     private ActorRef taskManager;
 
     @BeforeClass
     public static void oneTimeSetUp() {
-        system = ActorSystem.create("TransformTasks");
+
     }
 
     @AfterClass
     public static void oneTimeTearDown() {
-        system.shutdown();
+
     }
 
     @Before
     public void setUp() {
-
+        system = ActorSystem.create("TransformTasks");
     }
 
     @After
     public void tearDown() {
         system.stop(taskManager);
+        system.shutdown();
     }
 
     @Test
@@ -82,6 +87,35 @@ public class TaskManagerTest {
 
     }
 
+    @Test
+    public void testTaskError() throws Exception {
+        ConfigurationStore configurationStore = new MemoryConfigurationStore();
+        TaskConfiguration configurationTaskB = buildException("TaskB","Oops, I Crashed");
+        configurationStore.saveTask(configurationTaskB);
+        TaskConfiguration configurationTaskA = build("TaskA","#sum( \"k\" \"k\" \"b\")");
+        configurationStore.saveTask(configurationTaskA);
+
+        TaskChainConfiguration taskChainConfigurationB = new TaskChainConfiguration("TaskB", null);
+        TaskChainConfiguration taskChainConfigurationA = new TaskChainConfiguration("TaskA", taskChainConfigurationB);
+
+        TaskManagerConfiguration taskManagerConfiguration = new TaskManagerConfiguration("TaskManager","",taskChainConfigurationA,5);
+        configurationStore.saveTaskManager(taskManagerConfiguration);
+
+        taskManager = system.actorOf(TaskManager.props("TaskManager",configurationStore),"TaskManager");
+
+        Event event = new Event();
+        event.put("a", 1);
+
+        Timeout timeout = new Timeout(Duration.create(3000, "seconds"));
+        Message message = new DataMessage<Event>("/deadLetters",event);
+        Future<Object> futureA= Patterns.ask(taskManager, message, timeout);
+        ErrorMessage result = (ErrorMessage) Await.result(futureA, timeout.duration());
+
+        Assert.assertEquals("Oops, I Crashed", result.getErrorMessage());
+
+
+    }
+
     private TaskConfiguration build(String taskName,String taskTemplate)
     {
         StringBuilder template = new StringBuilder("");
@@ -98,7 +132,11 @@ public class TaskManagerTest {
         template.append(" ");
         template.append(taskTemplate);
 
-       return new TransformerTaskConfiguration(template.toString(),taskName,"stream.machine.core.task.transform.EventTransformerTask");
+        return new TransformerTaskConfiguration(template.toString(),taskName,"stream.machine.core.task.transform.EventTransformerTask");
 
+    }
+    private TaskConfiguration buildException(String taskName,String errorMessage)
+    {
+        return new TransformerTaskConfiguration(errorMessage,taskName,"stream.machine.core.task.ExceptionTask");
     }
 }

@@ -146,11 +146,11 @@ public class TaskManager extends UntypedActor {
                         break;
                 }
             }
-            if (message instanceof ErrorMessage) {
-                ErrorMessage errorMessage = (ErrorMessage) message;
-                getSender().tell(errorMessage, getSelf());
-            }
-            logger.debug("... message processed");
         }
+        if (message instanceof ErrorMessage) {
+            ErrorMessage errorMessage = (ErrorMessage) message;
+            getSender().tell(errorMessage, getSelf());
+        }
+        logger.debug("... message processed");
     }
 }

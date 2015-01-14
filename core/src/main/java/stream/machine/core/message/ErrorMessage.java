@@ -11,11 +11,13 @@ public class ErrorMessage extends MessageBase {
     public ErrorMessage(String task,String errorMessage) {
         super(task);
         this.errorMessage = errorMessage;
+        setStatus(TaskStatus.ERROR);
     }
 
     public ErrorMessage(String task, Message message, String errorMessage) {
         super(task,message);
-        this.errorMessage = errorMessage;;
+        this.errorMessage = errorMessage;
+        setStatus(TaskStatus.ERROR);
     }
 
     public String getErrorMessage() {

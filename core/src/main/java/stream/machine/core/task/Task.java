@@ -54,7 +54,7 @@ public abstract class Task extends UntypedActor {
         if (message instanceof ErrorMessage) {
             ErrorMessage errorMessage = (ErrorMessage) message;
             errorMessage.setTask(this.name);
-            sendUp(errorMessage);
+            sendError(errorMessage);
         }
 
         if (message instanceof DataMessage) {
@@ -70,10 +70,15 @@ public abstract class Task extends UntypedActor {
                         // Notify super task of the success
                         sendUp(reply);
                     }
-
                 } else {
-                    // Notify super task of the failure
-                    sendUp(reply);
+                    if (reply instanceof ErrorMessage) {
+                        ErrorMessage errorMessage = (ErrorMessage) reply;
+                        errorMessage.setTask(this.name);
+                        sendError(errorMessage);
+                    }
+                    else {
+                       unhandled(message);
+                    }
                 }
             }
             if (((DataMessage) message).getType() == MessageType.REPLY) {
@@ -101,6 +106,10 @@ public abstract class Task extends UntypedActor {
         ActorRef superTask = (this.superTask == null) ? getSender() : this.superTask;
         message.setTask(this.name);
         superTask.forward(message, getContext());
+    }
+
+    private void sendError(ErrorMessage message) {
+        getSender().tell(message, getSelf());
     }
 
     private void sendDown(Message message) {
