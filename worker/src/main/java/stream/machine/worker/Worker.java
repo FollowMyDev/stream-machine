@@ -6,12 +6,11 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.extension.ExtensionManager;
-import stream.machine.core.task.store.ConfigurationStore;
+import stream.machine.core.stream.StreamManager;
 import stream.machine.worker.configuration.WorkerConfiguration;
-import stream.machine.worker.manager.AgentManager;
-import stream.machine.worker.service.WorkerService;
+import stream.machine.worker.service.ConfigurationService;
+import stream.machine.worker.service.EventService;
 
 /**
  * Created by Stephane on 07/01/2015.
@@ -19,11 +18,12 @@ import stream.machine.worker.service.WorkerService;
 public class Worker extends Application<WorkerConfiguration> {
 
     private ExtensionManager extensionManager;
+    private StreamManager streamManager;
     private Logger logger;
 
     public Worker() {
         logger = LoggerFactory.getLogger("Worker");
-        extensionManager = new ExtensionManager();
+
     }
 
     public static void main(String[] args) throws Exception {
@@ -39,21 +39,45 @@ public class Worker extends Application<WorkerConfiguration> {
     @Override
     public void run(WorkerConfiguration configuration, Environment environment) throws Exception {
         try {
+            logger.error("Loading plugins ...");
+            extensionManager = new ExtensionManager(configuration.getConfigurationStore(), configuration.getEventStore());
             extensionManager.start();
-            ConfigurationStore configurationStore = extensionManager.getConfigurationStore(configuration.getConfigurationStore());
-            AgentManager agentManager = new AgentManager(configurationStore, configuration.getTimeoutInSeconds());
-            final WorkerService workerService = new WorkerService(agentManager);
-            environment.jersey().register(workerService);
-            environment.lifecycle().manage(agentManager);
-        } catch (ApplicationException error) {
-            logger.error("Cannot load plugins!!!",error);
-            this.extensionManager=null;
+            logger.error("... plugins loaded");
+            ;
+            logger.error("Starting stream manager ...");
+            streamManager = new StreamManager(extensionManager, configuration.getStreamPort());
+            streamManager.start();
+            logger.error("... stream manager started");
+
+            logger.error("Register event service ...");
+            final EventService eventService = new EventService(streamManager, configuration.getTimeoutInSeconds());
+            environment.jersey().register(eventService);
+            logger.error("... event service registered");
+
+            logger.error("Register configuration service ...");
+            final ConfigurationService configurationService = new ConfigurationService(extensionManager.getConfigurationStore());
+            environment.jersey().register(configurationService);
+            logger.error("... event configuration registered");
+
+        } catch (Exception error) {
+            logger.error("Cannot start worker!!!", error);
         }
     }
 
     @Override
     protected void finalize() throws Throwable {
         super.finalize();
-        extensionManager.stop();
+
+        logger.error("Stopping stream manager ...");
+        if (streamManager != null) {
+            streamManager.stop();
+        }
+        logger.error("... stream manager stopped");
+
+        logger.error("Unloading plugins ...");
+        if (extensionManager != null) {
+            extensionManager.stop();
+        }
+        logger.error("... plugins unloaded");
     }
 }

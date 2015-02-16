@@ -3,6 +3,7 @@ package stream.machine.core.model;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
+import scala.Serializable;
 
 import java.util.HashMap;
 import java.util.UUID;
@@ -10,7 +11,7 @@ import java.util.UUID;
 /**
  * Created by Stephane on 06/12/2014.
  */
-public class Event extends HashMap<String,Object> {
+public class Event extends HashMap<String,Object> implements Serializable {
     private static DateTimeFormatter dateTimeFormatter = ISODateTimeFormat.dateTimeParser();
 
     //Identification of the event
@@ -27,6 +28,7 @@ public class Event extends HashMap<String,Object> {
         setKey(UUID.randomUUID());
         setName(name);
         setType(type);
+        setTimestamp(new DateTime());
     }
 
     public UUID getKey() {
@@ -54,10 +56,14 @@ public class Event extends HashMap<String,Object> {
     }
 
     public DateTime getTimestamp() {
-        return (DateTime) get(Event.timestamp);
+        String dateAsString = (String) get(Event.timestamp);
+        if (dateAsString != null) {
+            return dateTimeFormatter.parseDateTime(dateAsString);
+        }
+        return null;
     }
 
     public void setTimestamp(DateTime timestamp) {
-        put(Event.timestamp, timestamp);
+        put(Event.timestamp, timestamp.toDateTimeISO().toString());
     }
 }

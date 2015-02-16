@@ -15,6 +15,8 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.manager.ManageableBase;
 
@@ -29,49 +31,63 @@ public class StoreManager extends ManageableBase {
     private final StoreConfiguration configuration;
     private Client client;
 
-
-    public StoreManager(String name, StoreConfiguration configuration) {
-        super(name);
+    public StoreManager( StoreConfiguration configuration) {
+        super("StoreManager");
         this.configuration = configuration;
     }
 
-    public StoreManager(String name, Client client) {
-        super(name);
+    public StoreManager( Client client) {
+        super("StoreManager");
         this.configuration = null;
         this.client = client;
     }
 
     @Override
     public void start() throws ApplicationException {
-        if (configuration == null) return;
-        if (configuration.isEmbedded()) {
-            ImmutableSettings.Builder settings = ImmutableSettings.settingsBuilder();
-            try {
-                settings.put("node.name", "worker-" + InetAddress.getLocalHost().getHostName());
-            } catch (UnknownHostException error) {
-                settings.put("node.name", "worker-" + UUID.randomUUID().toString());
-            }
+        logger.info("Starting the store manager ...");
+        try {
+            if (configuration == null) return;
+            if (configuration.isEmbedded()) {
+                ImmutableSettings.Builder settings = ImmutableSettings.settingsBuilder();
+                try {
+                    settings.put("node.name", "worker-" + InetAddress.getLocalHost().getHostName());
+                } catch (UnknownHostException error) {
+                    logger.error("Cannot resolve host to name the store manager",error);
+                    settings.put("node.name", "worker-" + UUID.randomUUID().toString());
+                }
 
-            for (Map.Entry<String, String> property : configuration.getProperties().entrySet()) {
-                settings.put(property.getKey(), property.getValue());
-            }
+                for (Map.Entry<String, String> property : configuration.getProperties().entrySet()) {
+                    settings.put(property.getKey(), property.getValue());
+                }
 
-            Node node = NodeBuilder.nodeBuilder().settings(settings).clusterName(configuration.getCluster()).data(true).local(false).node();
-            this.client = node.client();
-        } else {
-            Settings settings = ImmutableSettings.settingsBuilder().put("cluster.name", configuration.getCluster()).build();
-            TransportClient transportClient = new TransportClient(settings);
-            for (InetSocketTransportAddress node : configuration.getNodes()) {
-                transportClient.addTransportAddress(node);
+                Node node = NodeBuilder.nodeBuilder().settings(settings).clusterName(configuration.getCluster()).data(true).local(false).node();
+                this.client = node.client();
+            } else {
+                Settings settings = ImmutableSettings.settingsBuilder().put("cluster.name", configuration.getCluster()).classLoader(Settings.class.getClassLoader()).build();
+                TransportClient transportClient = new TransportClient(settings);
+                for (InetSocketTransportAddress node : configuration.getNodes()) {
+                    transportClient.addTransportAddress(node);
+                }
+                this.client = transportClient;
             }
-            this.client = transportClient;
+        }
+        finally
+        {
+            logger.info("... store manager started");
         }
     }
 
     @Override
     public void stop() throws ApplicationException {
-        if (configuration == null) return;
-        this.client.close();
+        logger.info("Stopping the store manager ...");
+        try {
+            if (configuration == null) return;
+            this.client.close();
+        }
+        finally
+        {
+            logger.info("... store manager stopped");
+        }
     }
 
     public Client getClient() {
@@ -104,5 +120,7 @@ public class StoreManager extends ManageableBase {
         IndicesExistsResponse response = exists.actionGet();
         return (response != null) ? response.isExists() : false;
     }
+
+
 
 }

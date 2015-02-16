@@ -10,8 +10,17 @@ public class WorkerConfiguration extends Configuration {
     @JsonProperty(required = true)
     private String configurationStore;
 
+    @JsonProperty(required = true)
+    private String eventStore;
+
     @JsonProperty
     private int timeoutInSeconds;
+
+    @JsonProperty
+    private String seeds;
+
+    @JsonProperty
+    private int streamPort;
 
     public WorkerConfiguration(){
         // set default values for non required fields
@@ -22,7 +31,19 @@ public class WorkerConfiguration extends Configuration {
         return configurationStore;
     }
 
+    public String getEventStore() {
+        return eventStore;
+    }
+
     public int getTimeoutInSeconds() {
         return timeoutInSeconds;
+    }
+
+    public String getSeeds() {
+        return seeds;
+    }
+
+    public int getStreamPort() {
+        return streamPort;
     }
 }

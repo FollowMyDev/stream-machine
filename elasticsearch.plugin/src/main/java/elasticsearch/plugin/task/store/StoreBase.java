@@ -1,37 +1,34 @@
 package elasticsearch.plugin.task.store;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.manager.ManageableBase;
-import stream.machine.core.task.store.Store;
+import stream.machine.core.store.Store;
 
 /**
  * Created by Stephane on 11/01/2015.
  */
 public abstract class StoreBase extends ManageableBase implements Store {
 
-    private final String index;
+    private static DateTimeFormatter dateTimeFormatter = ISODateTimeFormat.dateTimeParser();
     private final ObjectMapper mapper;
-    private final StoreManager storeManager;
+    protected final StoreManager storeManager;
+    protected final Logger logger;
 
-    public StoreBase(String name, String index, StoreManager storeManager) {
+    public StoreBase(String name, StoreManager storeManager) {
         super(name);
-        this.index = index;
         this.mapper = new ObjectMapper();
         this.storeManager = storeManager;
+        this.logger = LoggerFactory.getLogger(name);
     }
 
-    @Override
-    public void start() throws ApplicationException {
-        if (!storeManager.isIndexExist(this.index)) {
-            storeManager.createIndex(this.index);
+    protected void buildIndex(String index) throws ApplicationException {
+        if (!storeManager.isIndexExist(index)) {
+            storeManager.createIndex(index);
         }
-    }
-
-    @Override
-    public void stop() throws ApplicationException{
-
     }
 }

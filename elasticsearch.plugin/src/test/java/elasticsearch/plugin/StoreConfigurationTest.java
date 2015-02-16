@@ -3,10 +3,7 @@ package elasticsearch.plugin;
 import junit.framework.Assert;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 public class StoreConfigurationTest {
 

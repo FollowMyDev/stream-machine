@@ -1,8 +1,6 @@
 package elasticsearch.plugin;
 
 import elasticsearch.plugin.task.store.StoreManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ro.fortsoft.pf4j.PluginWrapper;
 import ro.fortsoft.pf4j.RuntimeMode;
 import stream.machine.core.exception.ApplicationException;
@@ -25,13 +23,12 @@ public class ElasticsearchPlugin extends PluginBase {
         ElasticsearchPlugin.storeManager = storeManager;
     }
 
-    protected final Logger logger;
+   // protected final Logger logger;
 
     public ElasticsearchPlugin(PluginWrapper wrapper) {
         super(wrapper);
-        logger = LoggerFactory.getLogger(wrapper.getPluginId());
         StoreConfiguration storeConfiguration = new StoreConfiguration(getConfiguration());
-        StoreManager storeManager = new StoreManager("storeManager", storeConfiguration);
+        StoreManager storeManager = new StoreManager(storeConfiguration);
         ElasticsearchPlugin.setStoreManager(storeManager);
 
     }
@@ -40,13 +37,13 @@ public class ElasticsearchPlugin extends PluginBase {
     public void start() {
         // for testing the development mode
         if (RuntimeMode.DEVELOPMENT.equals(wrapper.getRuntimeMode())) {
-            logger.warn("Plugin runs in development mode !!");
+          //  logger.warn("Plugin runs in development mode !!");
         }
         //start ES transport
         try {
             ElasticsearchPlugin.getStoreManager().start();
         } catch (ApplicationException error) {
-            logger.error("Fail to start plugin", error);
+           // logger.error("Fail to start plugin", error);
         }
 
     }
@@ -57,7 +54,7 @@ public class ElasticsearchPlugin extends PluginBase {
         try {
             ElasticsearchPlugin.getStoreManager().stop();
         } catch (ApplicationException error) {
-            logger.error("Fail to stop plugin", error);
+           // logger.error("Fail to stop plugin", error);
         }
     }
 

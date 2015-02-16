@@ -18,6 +18,7 @@
         <plugin.provider>Stream.Machine</plugin.provider>
         <plugin.dependencies />
         <elasticsearch.version>1.4.2</elasticsearch.version>
+        <commons.io.version>2.4</commons.io.version>
     </properties>
 
     <build>
@@ -118,6 +119,13 @@
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
+
+        <dependency>
+            <groupId>ro.fortsoft.pf4j</groupId>
+            <artifactId>pf4j</artifactId>
+            <version>${pf4j.version}</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
@@ -128,5 +136,20 @@
             <artifactId>jackson-databind</artifactId>
             <version>2.1.4</version>
         </dependency>
+
+        <dependency>
+            <groupId>commons-configuration</groupId>
+            <artifactId>commons-configuration</artifactId>
+            <version>${commons.configuration.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${commons.io.version}</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 </project>
