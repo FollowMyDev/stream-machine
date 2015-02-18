@@ -12,6 +12,7 @@
     <artifactId>worker</artifactId>
     <properties>
         <dropwizard.version>0.7.1</dropwizard.version>
+        <gatling-plugin.version>2.0.0-RC3</gatling-plugin.version>
     </properties>
     <build>
         <plugins>
@@ -46,7 +47,32 @@
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>stream.machine.worker.Worker</mainClass>
                                 </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>reference.conf</resource>
+                                </transformer>
                             </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.gatling</groupId>
+                <artifactId>gatling-maven-plugin</artifactId>
+                <version>${gatling-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Default values -->
+                            <configFolder>src/test/resources/config</configFolder>
+                            <dataFolder>src/test/resources/data</dataFolder>
+                            <resultsFolder>target/gatling/results</resultsFolder>
+                            <requestBodiesFolder>src/test/resources/request-bodies</requestBodiesFolder>
+                            <simulationsFolder>src/test/simulations</simulationsFolder>
+                            <simulationClass>Transform</simulationClass>
                         </configuration>
                     </execution>
                 </executions>
@@ -65,7 +91,6 @@
             <artifactId>dropwizard-core</artifactId>
             <version>${dropwizard.version}</version>
         </dependency>
-
         <dependency>
             <groupId>ro.fortsoft.pf4j</groupId>
             <artifactId>pf4j</artifactId>
@@ -76,6 +101,19 @@
             <artifactId>kamon-newrelic</artifactId>
             <version>0.3.0</version>
         </dependency>
+        <dependency>
+            <groupId>io.gatling</groupId>
+            <artifactId>gatling-maven-plugin</artifactId>
+            <version>${gatling-plugin.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.gatling.highcharts</groupId>
+            <artifactId>gatling-charts-highcharts</artifactId>
+            <version>${gatling-plugin.version}</version>
+            <scope>test</scope>
+        </dependency>
+
 
     </dependencies>
 

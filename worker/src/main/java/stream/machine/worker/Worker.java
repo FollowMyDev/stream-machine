@@ -19,6 +19,7 @@ public class Worker extends Application<WorkerConfiguration> {
 
     private ExtensionManager extensionManager;
     private StreamManager streamManager;
+    private EventService eventService;
     private Logger logger;
 
     public Worker() {
@@ -50,8 +51,9 @@ public class Worker extends Application<WorkerConfiguration> {
             logger.error("... stream manager started");
 
             logger.error("Register event service ...");
-            final EventService eventService = new EventService(streamManager, configuration.getTimeoutInSeconds());
+            eventService = new EventService(streamManager, configuration.getTimeoutInSeconds());
             environment.jersey().register(eventService);
+            eventService.start();
             logger.error("... event service registered");
 
             logger.error("Register configuration service ...");
@@ -73,6 +75,8 @@ public class Worker extends Application<WorkerConfiguration> {
             streamManager.stop();
         }
         logger.error("... stream manager stopped");
+
+        eventService.stop();
 
         logger.error("Unloading plugins ...");
         if (extensionManager != null) {

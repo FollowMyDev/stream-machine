@@ -50,6 +50,7 @@ public class EventTransformerTaskTest {
         template.append("#sum( \"a\" \"b\" \"c\")");
 
         EventTransformerConfiguration configuration = new EventTransformerConfiguration("Simple",template.toString());
+
         TransformWorker transformerTask = new TransformWorker(configuration,system);
         transformerTask.start();
         Event event = new Event();
