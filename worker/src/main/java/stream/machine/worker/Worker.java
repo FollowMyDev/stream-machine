@@ -12,6 +12,7 @@ import stream.machine.worker.configuration.WorkerConfiguration;
 import stream.machine.worker.service.ConfigurationService;
 import stream.machine.worker.service.EventService;
 
+
 /**
  * Created by Stephane on 07/01/2015.
  */
@@ -30,11 +31,9 @@ public class Worker extends Application<WorkerConfiguration> {
     public static void main(String[] args) throws Exception {
         new Worker().run(args);
     }
-
-
+    
     @Override
     public void initialize(Bootstrap<WorkerConfiguration> bootstrap) {
-
     }
 
     @Override
@@ -57,7 +56,7 @@ public class Worker extends Application<WorkerConfiguration> {
             logger.error("... event service registered");
 
             logger.error("Register configuration service ...");
-            final ConfigurationService configurationService = new ConfigurationService(extensionManager.getConfigurationStore());
+            final ConfigurationService configurationService = new ConfigurationService(streamManager);
             environment.jersey().register(configurationService);
             logger.error("... event configuration registered");
 

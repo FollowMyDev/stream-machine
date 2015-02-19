@@ -102,6 +102,11 @@
             <version>0.3.0</version>
         </dependency>
         <dependency>
+            <groupId>io.federecio</groupId>
+            <artifactId>dropwizard-swagger</artifactId>
+            <version>0.5.2</version>
+        </dependency>
+        <dependency>
             <groupId>io.gatling</groupId>
             <artifactId>gatling-maven-plugin</artifactId>
             <version>${gatling-plugin.version}</version>

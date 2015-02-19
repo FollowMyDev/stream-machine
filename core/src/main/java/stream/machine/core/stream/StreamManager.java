@@ -70,4 +70,8 @@ public class StreamManager extends ManageableBase {
     public Worker getWorker(String workerName, WorkerType workerType) {
         return factory.build(workerType, workerName);
     }
+
+    public StoreManager getStoreManager() {
+        return storeManager;
+    }
 }
