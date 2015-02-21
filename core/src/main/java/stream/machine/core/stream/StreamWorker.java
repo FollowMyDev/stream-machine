@@ -4,9 +4,9 @@ package stream.machine.core.stream;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.japi.Creator;
-import stream.machine.core.worker.Worker;
-import stream.machine.core.worker.WorkerFactory;
-import stream.machine.core.worker.WorkerType;
+import stream.machine.core.task.Task;
+import stream.machine.core.task.TaskFactory;
+import stream.machine.core.task.TaskType;
 
 import java.lang.reflect.Constructor;
 
@@ -19,23 +19,23 @@ import java.lang.reflect.Constructor;
  */
 public class StreamWorker extends UntypedActor {
 
-    private Worker worker;
+    private Task worker;
     private final String workerName;
-    private final WorkerType workerType;
-    private final WorkerFactory workerFactory;
+    private final TaskType workerType;
+    private final TaskFactory workerFactory;
 
-    public static Props props(final String workerName, final WorkerType workerType, final WorkerFactory workerFactory) {
+    public static Props props(final String workerName, final TaskType workerType, final TaskFactory workerFactory) {
         return Props.create(new Creator<StreamWorker>() {
             @Override
             public StreamWorker create() throws Exception {
-                Constructor<StreamWorker> ctor = StreamWorker.class.getDeclaredConstructor(String.class, WorkerType.class, WorkerFactory.class);
+                Constructor<StreamWorker> ctor = StreamWorker.class.getDeclaredConstructor(String.class, TaskType.class, TaskFactory.class);
                 StreamWorker worker = ctor.newInstance(workerName, workerType, workerFactory);
                 return worker;
             }
         });
     }
 
-    public StreamWorker(String workerName, WorkerType workerType, WorkerFactory workerFactory) {
+    public StreamWorker(String workerName, TaskType workerType, TaskFactory workerFactory) {
         this.workerName = workerName;
         this.workerType = workerType;
         this.workerFactory = workerFactory;

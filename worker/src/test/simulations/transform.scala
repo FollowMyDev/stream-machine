@@ -16,7 +16,7 @@ class Transform extends Simulation {
     .repeat(1) {
     exec(
       http("A+B=C Trans")
-        .get("/event/transform")
+        .post("/event/transform/AplusBinC")
         .body(StringBody("{\"a\":1,\"b\":2}"))
         .asJSON
     )

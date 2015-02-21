@@ -1,5 +1,5 @@
-configurationStore: elasticsearch.plugin.task.store.configuration.Store
-eventStore: elasticsearch.plugin.task.store.event.Store
+configurationStore: stream.machine.core.store.memory.MemoryConfigurationStore
+eventStore: stream.machine.core.store.memory.MemoryEventStore
 streamPort : 2551
 seeds : akka.tcp://StreamManager@localhost:2551,akka.tcp://StreamManager@localhost:2552
 timeoutInSeconds : 5

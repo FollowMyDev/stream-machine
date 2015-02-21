@@ -6,9 +6,9 @@ import org.junit.*;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
-import stream.machine.core.configuration.task.EventTransformerConfiguration;
+import stream.machine.core.configuration.transform.EventTransformerConfiguration;
 import stream.machine.core.model.Event;
-import stream.machine.core.worker.actor.TransformWorker;
+import stream.machine.core.task.actor.TransformTask;
 
 public class EventTransformerTaskTest {
 
@@ -51,14 +51,14 @@ public class EventTransformerTaskTest {
 
         EventTransformerConfiguration configuration = new EventTransformerConfiguration("Simple",template.toString());
 
-        TransformWorker transformerTask = new TransformWorker(configuration,system);
+        TransformTask transformerTask = new TransformTask(configuration,system);
         transformerTask.start();
         Event event = new Event();
         event.put("a", 1);
         event.put("b", 17);
 
         Timeout timeout = new Timeout(Duration.create(3000, "seconds"));
-        Future<Event> future=  transformerTask.transform(event);
+        Future<Event> future=  transformerTask.process(event);
         Event result = Await.result(future, timeout.duration());
 
         Assert.assertEquals(18, result.get("c"));

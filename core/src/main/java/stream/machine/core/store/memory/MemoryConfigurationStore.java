@@ -17,11 +17,11 @@ import java.util.List;
  */
 @Extension
 public class MemoryConfigurationStore extends ManageableBase implements ConfigurationStore {
-    private final MemoryStore<Configuration> configurations;
+    private final MemoryStore<Configuration> configurationStore;
 
     public MemoryConfigurationStore() {
         super("MemoryConfigurationStore");
-        this.configurations = new MemoryStore<Configuration>();
+        this.configurationStore = new MemoryStore<Configuration>();
     }
 
     @Override
@@ -37,7 +37,7 @@ public class MemoryConfigurationStore extends ManageableBase implements Configur
 
     @Override
     public <T extends Configuration> List<T> readAll(ConfigurationType type, Class<T> configurationClass) {
-        List<Configuration> items = configurations.readAll();
+        List<Configuration> items = configurationStore.readAll();
         if (items != null && items.size() > 0) {
             Function<Configuration, T> convertTo = new Function<Configuration, T>() {
                 @Override
@@ -52,22 +52,22 @@ public class MemoryConfigurationStore extends ManageableBase implements Configur
 
     @Override
     public <T extends Configuration> T readConfiguration(String name,ConfigurationType type,Class<T> configurationClass) {
-        Configuration item = configurations.read(name);
+        Configuration item = configurationStore.read(name);
         return (T) item;
     }
 
     @Override
     public <T extends Configuration> void saveConfiguration(T configuration) throws ApplicationException {
-        configurations.save(configuration.getName(),configuration);
+        configurationStore.save(configuration.getName(), configuration);
     }
 
     @Override
     public <T extends Configuration> void updateConfiguration(T configuration) throws ApplicationException {
-        configurations.update(configuration.getName(), configuration);
+        configurationStore.update(configuration.getName(), configuration);
     }
 
     @Override
     public <T extends Configuration> void deleteConfiguration(T configuration) throws ApplicationException {
-        configurations.delete(configuration.getName());
+        configurationStore.delete(configuration.getName());
     }
 }

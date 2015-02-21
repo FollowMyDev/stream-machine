@@ -90,10 +90,10 @@ public class Store extends StoreBase implements EventStore {
                 bulkRequest.add(client.prepareIndex(buildIndex(eventType, eventTimeStamp), eventType, event.getKey().toString()).setSource(eventAsString));
             } catch (ApplicationException error) {
                 logger.error(String.format("Request building failed for event %s", event.getKey().toString()), error);
-                event.put("error", error.getMessage());
+                event.put(Event.storeError, error.getMessage());
             } catch (JsonProcessingException error) {
                 logger.error(String.format("Json conversion failed for event %s", event.getKey().toString()), error);
-                event.put("error", error.getMessage());
+                event.put(Event.storeError, error.getMessage());
             }
         }
 
@@ -113,7 +113,7 @@ public class Store extends StoreBase implements EventStore {
                 if (filteredEvents != null && filteredEvents.size() == 1) {
                     Event filteredEvent = (Event) filteredEvents.toArray()[0];
                     if (response.getFailure() != null) {
-                        filteredEvent.put("error", response.getFailure().getMessage());
+                        filteredEvent.put(Event.storeError, response.getFailure().getMessage());
                     } else {
                         filteredEvent.put("version", response.getVersion());
                     }
@@ -137,11 +137,11 @@ public class Store extends StoreBase implements EventStore {
                     .setSource(eventAsString);
         } catch (ApplicationException error) {
             logger.error(String.format("Request building failed for event %s", event.getKey().toString()), error);
-            event.put("error", error.getMessage());
+            event.put(Event.storeError, error.getMessage());
             return event;
         } catch (JsonProcessingException error) {
             logger.error(String.format("Json conversion failed for event %s", event.getKey().toString()), error);
-            event.put("error", error.getMessage());
+            event.put(Event.storeError, error.getMessage());
             return event;
         }
 

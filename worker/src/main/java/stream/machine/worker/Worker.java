@@ -21,17 +21,18 @@ public class Worker extends Application<WorkerConfiguration> {
     private ExtensionManager extensionManager;
     private StreamManager streamManager;
     private EventService eventService;
+    private ConfigurationService configurationService;
     private Logger logger;
 
     public Worker() {
-        logger = LoggerFactory.getLogger("Worker");
+        logger = LoggerFactory.getLogger("Task");
 
     }
 
     public static void main(String[] args) throws Exception {
         new Worker().run(args);
     }
-    
+
     @Override
     public void initialize(Bootstrap<WorkerConfiguration> bootstrap) {
     }
@@ -39,26 +40,27 @@ public class Worker extends Application<WorkerConfiguration> {
     @Override
     public void run(WorkerConfiguration configuration, Environment environment) throws Exception {
         try {
-            logger.error("Loading plugins ...");
+            logger.info("Loading plugins ...");
             extensionManager = new ExtensionManager(configuration.getConfigurationStore(), configuration.getEventStore());
             extensionManager.start();
-            logger.error("... plugins loaded");
+            logger.info("... plugins loaded");
             ;
-            logger.error("Starting stream manager ...");
+            logger.info("Starting stream manager ...");
             streamManager = new StreamManager(extensionManager, configuration.getStreamPort());
             streamManager.start();
-            logger.error("... stream manager started");
+            logger.info("... stream manager started");
 
-            logger.error("Register event service ...");
+            logger.info("Register event store ...");
             eventService = new EventService(streamManager, configuration.getTimeoutInSeconds());
-            environment.jersey().register(eventService);
             eventService.start();
-            logger.error("... event service registered");
+            environment.jersey().register(eventService);
+            logger.info("... event store registered");
 
-            logger.error("Register configuration service ...");
-            final ConfigurationService configurationService = new ConfigurationService(streamManager);
+            logger.info("Register configuration store ...");
+            configurationService = new ConfigurationService(streamManager);
+            configurationService.start();
             environment.jersey().register(configurationService);
-            logger.error("... event configuration registered");
+            logger.info("... event configuration registered");
 
         } catch (Exception error) {
             logger.error("Cannot start worker!!!", error);
@@ -69,18 +71,24 @@ public class Worker extends Application<WorkerConfiguration> {
     protected void finalize() throws Throwable {
         super.finalize();
 
-        logger.error("Stopping stream manager ...");
+        logger.info("Stopping stream manager ...");
         if (streamManager != null) {
             streamManager.stop();
         }
-        logger.error("... stream manager stopped");
+        logger.info("... stream manager stopped");
 
+        logger.info("Removing configuration store ...");
+        configurationService.stop();
+        logger.info("... event configuration removed");
+
+        logger.info("Removing event store ...");
         eventService.stop();
+        logger.info("... event store removed");
 
-        logger.error("Unloading plugins ...");
+        logger.info("Unloading plugins ...");
         if (extensionManager != null) {
             extensionManager.stop();
         }
-        logger.error("... plugins unloaded");
+        logger.info("... plugins unloaded");
     }
 }

@@ -1,9 +1,9 @@
-package stream.machine.core.worker;
+package stream.machine.core.task;
 
 /**
  * Created by Stephane on 14/02/2015.
  */
-public enum WorkerType {
+public enum TaskType {
     Transform,
     Store
 }

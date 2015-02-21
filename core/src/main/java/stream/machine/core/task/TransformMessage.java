@@ -1,16 +1,16 @@
-package stream.machine.core.worker;
+package stream.machine.core.task;
 
 import stream.machine.core.model.Event;
 
 /**
  * Created by Stephane on 15/02/2015.
  */
-public class TransformMessage extends WorkerMessage{
+public class TransformMessage extends TaskMessage {
     private final Event event;
 
 
     public TransformMessage(Event event) {
-        super(WorkerType.Transform);
+        super(TaskType.Transform);
         this.event = event;
     }
 

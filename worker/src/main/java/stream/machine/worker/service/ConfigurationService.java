@@ -2,9 +2,10 @@ package stream.machine.worker.service;
 
 import com.codahale.metrics.annotation.Timed;
 import stream.machine.core.configuration.ConfigurationType;
-import stream.machine.core.configuration.service.ServiceConfiguration;
-import stream.machine.core.configuration.task.EventTransformerConfiguration;
+import stream.machine.core.configuration.store.EventStorageConfiguration;
+import stream.machine.core.configuration.transform.EventTransformerConfiguration;
 import stream.machine.core.exception.ApplicationException;
+import stream.machine.core.manager.ManageableBase;
 import stream.machine.core.store.ConfigurationStore;
 import stream.machine.core.store.StoreManager;
 import stream.machine.core.stream.StreamManager;
@@ -18,10 +19,11 @@ import java.util.List;
  */
 @Path("/configuration")
 @Produces(MediaType.APPLICATION_JSON)
-public class ConfigurationService {
+public class ConfigurationService extends ManageableBase{
     private final ConfigurationStore configurationStore;
 
     public ConfigurationService(StreamManager streamManager) {
+        super("ConfigurationService");
         if (streamManager != null) {
             StoreManager storeManager = streamManager.getStoreManager();
             if (storeManager != null) {
@@ -39,22 +41,22 @@ public class ConfigurationService {
     @Path("eventTransformer/readAll")
     public List<EventTransformerConfiguration> readAllEventTransformerConfiguration() {
         if (this.configurationStore != null) {
-            return this.configurationStore.readAll(ConfigurationType.EventTransformer, EventTransformerConfiguration.class);
+            return this.configurationStore.readAll(ConfigurationType.Transform, EventTransformerConfiguration.class);
         }
         return null;
     }
 
     @GET
     @Timed
-    @Path("eventTransformer/read")
-    EventTransformerConfiguration readConfigurationEventTransformerConfiguration(String name) {
+    @Path("eventTransformer/read/{name}")
+    public EventTransformerConfiguration readConfigurationEventTransformerConfiguration(@PathParam("name")String name) {
         if (this.configurationStore != null) {
-            return this.configurationStore.readConfiguration(name, ConfigurationType.EventTransformer, EventTransformerConfiguration.class);
+            return this.configurationStore.readConfiguration(name, ConfigurationType.Transform, EventTransformerConfiguration.class);
         }
         return null;
     }
 
-    @PUT
+    @POST
     @Timed
     @Path("eventTransformer/save")
     public void saveConfiguration(EventTransformerConfiguration configuration) throws ApplicationException {
@@ -63,7 +65,7 @@ public class ConfigurationService {
         }
     }
 
-    @PUT
+    @POST
     @Timed
     @Path("eventTransformer/update")
     public void updateConfiguration(EventTransformerConfiguration configuration) throws ApplicationException {
@@ -83,37 +85,37 @@ public class ConfigurationService {
 
     @GET
     @Timed
-    @Path("service/readAll")
-    public List<ServiceConfiguration> readAllServiceConfiguration() {
+    @Path("store/readAll")
+    public List<EventStorageConfiguration> readAllServiceConfiguration() {
         if (this.configurationStore != null) {
-            return this.configurationStore.readAll(ConfigurationType.Service, ServiceConfiguration.class);
+            return this.configurationStore.readAll(ConfigurationType.Store, EventStorageConfiguration.class);
         }
         return null;
     }
 
     @GET
     @Timed
-    @Path("service/read")
-    ServiceConfiguration readConfigurationServiceConfiguration(String name) {
+    @Path("store/read/{name}")
+    public EventStorageConfiguration readConfigurationServiceConfiguration(@PathParam("name") String name) {
         if (this.configurationStore != null) {
-            return this.configurationStore.readConfiguration(name, ConfigurationType.Service, ServiceConfiguration.class);
+            return this.configurationStore.readConfiguration(name, ConfigurationType.Store, EventStorageConfiguration.class);
         }
         return null;
     }
 
     @PUT
     @Timed
-    @Path("service/save")
-    public void saveConfiguration(ServiceConfiguration configuration) throws ApplicationException {
+    @Path("store/save")
+    public void saveConfiguration(EventStorageConfiguration configuration) throws ApplicationException {
         if (this.configurationStore != null) {
             this.configurationStore.saveConfiguration(configuration);
         }
     }
 
-    @PUT
+    @POST
     @Timed
-    @Path("eventTransformer/update")
-    public void updateConfiguration(ServiceConfiguration configuration) throws ApplicationException {
+    @Path("store/update")
+    public void updateConfiguration(EventStorageConfiguration configuration) throws ApplicationException {
         if (this.configurationStore != null) {
             this.configurationStore.updateConfiguration(configuration);
         }
@@ -121,11 +123,20 @@ public class ConfigurationService {
 
     @DELETE
     @Timed
-    @Path("service/delete")
-    public void deleteConfiguration(ServiceConfiguration configuration) throws ApplicationException {
+    @Path("store/delete")
+    public void deleteConfiguration(EventStorageConfiguration configuration) throws ApplicationException {
         if (this.configurationStore != null) {
             this.configurationStore.deleteConfiguration(configuration);
         }
     }
 
+    @Override
+    public void start() throws ApplicationException {
+
+    }
+
+    @Override
+    public void stop() throws ApplicationException {
+
+    }
 }

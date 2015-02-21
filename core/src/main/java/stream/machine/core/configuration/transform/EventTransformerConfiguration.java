@@ -1,4 +1,4 @@
-package stream.machine.core.configuration.task;
+package stream.machine.core.configuration.transform;
 
 import stream.machine.core.configuration.Configuration;
 import stream.machine.core.configuration.ConfigurationType;
@@ -13,7 +13,7 @@ public class EventTransformerConfiguration extends Configuration {
     {}
 
     public EventTransformerConfiguration(String name, String template) {
-        super(name, ConfigurationType.EventTransformer);
+        super(name, ConfigurationType.Transform);
         this.template = template;
     }
 

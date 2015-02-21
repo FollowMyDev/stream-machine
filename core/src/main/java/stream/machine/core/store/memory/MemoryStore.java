@@ -1,5 +1,6 @@
 package stream.machine.core.store.memory;
 
+import com.google.common.collect.ImmutableList;
 import stream.machine.core.exception.ApplicationException;
 
 import java.util.ArrayList;
@@ -17,14 +18,14 @@ public class MemoryStore<T> {
         this.items = new ConcurrentHashMap<String, T>();
     }
 
-    synchronized public List<T> readAll() {
+    public List<T> readAll() {
         if (this.items.size() == 0) {
             return new ArrayList<T>();
         }
-        return new ArrayList<T>(this.items.values());
+        return ImmutableList.copyOf(this.items.values());
     }
 
-    synchronized public T read(String name) {
+    public T read(String name) {
         if (name == null || name.isEmpty()) {
             return null;
         }
@@ -34,7 +35,7 @@ public class MemoryStore<T> {
         return null;
     }
 
-    synchronized public void save(String name, T item) throws ApplicationException {
+    public void save(String name, T item) throws ApplicationException {
         if (item == null || name == null || name.isEmpty()) {
             return;
         }
@@ -43,7 +44,7 @@ public class MemoryStore<T> {
         }
     }
 
-    synchronized public void update(String name, T item) throws ApplicationException {
+     public void update(String name, T item) throws ApplicationException {
         if (item == null || name == null || name.isEmpty()) {
             return;
         }
@@ -52,7 +53,7 @@ public class MemoryStore<T> {
         }
     }
 
-    synchronized public void delete(String name) throws ApplicationException {
+    public void delete(String name) throws ApplicationException {
         if (name == null || name.isEmpty()) {
             return;
         }

@@ -1,46 +1,39 @@
-package stream.machine.core.worker.actor;
+package stream.machine.core.task.actor;
 
 import akka.actor.ActorSystem;
 import akka.dispatch.Futures;
-import akka.japi.Function2;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import scala.concurrent.Future;
-import stream.machine.core.configuration.task.EventTransformerConfiguration;
+import stream.machine.core.configuration.transform.EventTransformerConfiguration;
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.manager.ManageableBase;
 import stream.machine.core.model.Event;
-import stream.machine.core.worker.Worker;
+import stream.machine.core.task.Task;
 
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Callable;
 
-import static akka.dispatch.Futures.fold;
 import static akka.dispatch.Futures.future;
 
 /**
  * Created by Stephane on 07/12/2014.
  */
-public class TransformWorker extends ManageableBase implements Worker {
-
-
+public class TransformTask extends ManageableBase implements Task {
     private VelocityEngine engine;
     private final EventTransformerConfiguration configuration;
     private final ActorSystem system;
 
-
-    public TransformWorker(EventTransformerConfiguration configuration, ActorSystem system) {
+    public TransformTask(EventTransformerConfiguration configuration, ActorSystem system) {
         super(configuration.getName());
         this.configuration = configuration;
         this.system = system;
     }
 
     @Override
-    public Future<Event> transform(Event event) {
+    public Future<Event> process(Event event) {
         if (engine != null) {
-            return future(new DoTransform(engine, configuration, event), system.dispatcher());
+            return future(new DoProcess(engine, configuration, event), system.dispatcher());
         } else {
             return Futures.successful(event);
         }
@@ -57,13 +50,12 @@ public class TransformWorker extends ManageableBase implements Worker {
         engine = null;
     }
 
-
-    public class DoTransform implements Callable<Event> {
+    private class DoProcess implements Callable<Event> {
         private final String template;
         private final Event event;
-        private VelocityEngine engine;
+        private final VelocityEngine engine;
 
-        public DoTransform(VelocityEngine engine, EventTransformerConfiguration configuration, Event event) {
+        public DoProcess(VelocityEngine engine, EventTransformerConfiguration configuration, Event event) {
             this.engine = engine;
             this.template = configuration.getTemplate();
             this.event = event;

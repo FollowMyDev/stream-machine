@@ -10,13 +10,12 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.manager.ManageableBase;
-import stream.machine.core.model.Event;
 import stream.machine.core.store.StoreManager;
-import stream.machine.core.worker.TransformMessage;
-import stream.machine.core.worker.Worker;
-import stream.machine.core.worker.WorkerType;
-import stream.machine.core.worker.actor.ActorWorkerFactory;
-import stream.machine.core.worker.actor.TransformWorker;
+import stream.machine.core.task.Task;
+import stream.machine.core.task.TaskType;
+import stream.machine.core.task.actor.ActorTaskFactory;
+
+import java.util.Map;
 
 /**
  * Created by Stephane on 14/02/2015.
@@ -25,11 +24,10 @@ public class StreamManager extends ManageableBase {
     private final int communicationPort;
     private final StoreManager storeManager;
     private ActorSystem system;
-    private ActorRef worker;
     private ActorRef watcher;
     private ActorRef localMaster;
     private ActorRef master;
-    private ActorWorkerFactory factory;
+    private ActorTaskFactory factory;
 
     public StreamManager(StoreManager storeManager, int communicationPort) {
         super("StreamManager");
@@ -48,11 +46,9 @@ public class StreamManager extends ManageableBase {
 
         this.system = ActorSystem.create(getName(), config);
 
-        factory = new ActorWorkerFactory(storeManager, system);
+        factory = new ActorTaskFactory(storeManager, system);
 
         watcher = system.actorOf(Props.create(StreamWatcher.class), "watcher");
-
-        worker = system.actorOf(StreamWorker.props("worker", WorkerType.Transform, null), "worker");
 
         localMaster = system.actorOf(ClusterSingletonManager.defaultProps(Props.create(StreamMaster.class), "master", PoisonPill.getInstance(), "master"), "streamService");
 
@@ -67,8 +63,12 @@ public class StreamManager extends ManageableBase {
     }
 
 
-    public Worker getWorker(String workerName, WorkerType workerType) {
-        return factory.build(workerType, workerName);
+    public Task getTask(String workerName, TaskType taskType) {
+        return factory.build(taskType, workerName);
+    }
+
+    public Map<String,Task> getTasks(TaskType taskType) {
+        return factory.buildAll(taskType);
     }
 
     public StoreManager getStoreManager() {
