@@ -1,7 +1,6 @@
 package stream.machine.worker.service;
 
 import com.codahale.metrics.annotation.Timed;
-import stream.machine.core.configuration.ConfigurationType;
 import stream.machine.core.configuration.store.EventStorageConfiguration;
 import stream.machine.core.configuration.transform.EventTransformerConfiguration;
 import stream.machine.core.exception.ApplicationException;
@@ -9,6 +8,7 @@ import stream.machine.core.manager.ManageableBase;
 import stream.machine.core.store.ConfigurationStore;
 import stream.machine.core.store.StoreManager;
 import stream.machine.core.stream.StreamManager;
+import stream.machine.core.task.TaskType;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -41,7 +41,11 @@ public class ConfigurationService extends ManageableBase{
     @Path("eventTransformer/readAll")
     public List<EventTransformerConfiguration> readAllEventTransformerConfiguration() {
         if (this.configurationStore != null) {
-            return this.configurationStore.readAll(ConfigurationType.Transform, EventTransformerConfiguration.class);
+            try {
+                return this.configurationStore.readAll(TaskType.Transform, EventTransformerConfiguration.class);
+            } catch (ApplicationException error) {
+                logger.error(error.getMessage());
+            }
         }
         return null;
     }
@@ -51,7 +55,11 @@ public class ConfigurationService extends ManageableBase{
     @Path("eventTransformer/read/{name}")
     public EventTransformerConfiguration readConfigurationEventTransformerConfiguration(@PathParam("name")String name) {
         if (this.configurationStore != null) {
-            return this.configurationStore.readConfiguration(name, ConfigurationType.Transform, EventTransformerConfiguration.class);
+            try {
+                return this.configurationStore.readConfiguration(name, TaskType.Transform, EventTransformerConfiguration.class);
+            } catch (ApplicationException error) {
+                logger.error(error.getMessage());
+            }
         }
         return null;
     }
@@ -88,7 +96,11 @@ public class ConfigurationService extends ManageableBase{
     @Path("store/readAll")
     public List<EventStorageConfiguration> readAllServiceConfiguration() {
         if (this.configurationStore != null) {
-            return this.configurationStore.readAll(ConfigurationType.Store, EventStorageConfiguration.class);
+            try {
+                return this.configurationStore.readAll(TaskType.Store, EventStorageConfiguration.class);
+            } catch (ApplicationException error) {
+                logger.error(error.getMessage());
+            }
         }
         return null;
     }
@@ -98,7 +110,11 @@ public class ConfigurationService extends ManageableBase{
     @Path("store/read/{name}")
     public EventStorageConfiguration readConfigurationServiceConfiguration(@PathParam("name") String name) {
         if (this.configurationStore != null) {
-            return this.configurationStore.readConfiguration(name, ConfigurationType.Store, EventStorageConfiguration.class);
+            try {
+                return this.configurationStore.readConfiguration(name, TaskType.Store, EventStorageConfiguration.class);
+            } catch (ApplicationException error) {
+                logger.error(error.getMessage());
+            }
         }
         return null;
     }

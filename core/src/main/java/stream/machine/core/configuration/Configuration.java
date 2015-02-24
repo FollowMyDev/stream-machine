@@ -1,17 +1,19 @@
 package stream.machine.core.configuration;
 
+import stream.machine.core.task.TaskType;
+
 /**
  * Created by Stephane on 18/01/2015.
  */
-public abstract class Configuration {
+public class Configuration {
     private String name;
-    private ConfigurationType type;
+    private TaskType type;
     private int version;
 
-    protected Configuration(){
+    public Configuration(){
     }
 
-    protected Configuration(String name, ConfigurationType type) {
+    public Configuration(String name, TaskType type) {
         this.name = name;
         this.type = type;
         this.version = 0;
@@ -21,7 +23,7 @@ public abstract class Configuration {
         return name;
     }
 
-    public ConfigurationType getType() {
+    public TaskType getType() {
         return type;
     }
 

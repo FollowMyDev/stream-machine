@@ -1,4 +1,4 @@
-package stream.machine.core.worker;
+package stream.machine.core.task;
 
 import akka.actor.ActorSystem;
 import org.junit.*;
@@ -8,14 +8,12 @@ import stream.machine.core.manager.ManageableBase;
 import stream.machine.core.store.StoreManager;
 import stream.machine.core.store.memory.MemoryStoreManager;
 import stream.machine.core.stream.StreamManager;
-import stream.machine.core.task.Task;
-import stream.machine.core.task.TaskType;
 
 import java.util.Map;
 
 public class TaskTest extends ManageableBase{
 
-    private static ActorSystem system;
+
     StreamManager streamManager;
 
     public TaskTest() {
@@ -24,12 +22,12 @@ public class TaskTest extends ManageableBase{
 
     @BeforeClass
     public static void oneTimeSetUp() {
-        system = ActorSystem.create("TaskTest");
+
     }
 
     @AfterClass
     public static void oneTimeTearDown() {
-        system.shutdown();
+
     }
 
     @Before

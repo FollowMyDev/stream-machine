@@ -9,7 +9,6 @@ import stream.machine.core.manager.ManageableBase;
 import stream.machine.core.model.Event;
 import stream.machine.core.store.EventStore;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,17 +35,17 @@ public class MemoryEventStore extends ManageableBase implements EventStore {
     }
 
     @Override
-    public List<Event> save(List<Event> events) {
+    public List<Event> save(List<Event> events) throws ApplicationException{
         if (events != null && events.size() > 0) {
             for (Event event : events) {
-               save(event);
+                save(event);
             }
         }
         return ImmutableList.copyOf(events);
     }
 
     @Override
-    public Event save(Event event) {
+    public Event save(Event event) throws ApplicationException {
         if (event != null) {
             MemoryStore<Event> store = null;
             if (!eventStore.containsKey(event.getType())) {
@@ -55,42 +54,37 @@ public class MemoryEventStore extends ManageableBase implements EventStore {
             } else {
                 store = eventStore.get(event.getType());
             }
-            try {
-                if ( store != null) {
-                    store.save(event.getKey().toString(), event);
-                }
-            } catch (ApplicationException error) {
-                logger.error("Failed to  add event", event);
-                event.put(Event.storeError, error.getMessage());
+
+            if (store != null) {
+                store.save(event.getKey().toString(), event);
             }
+
         }
         return event;
     }
 
     @Override
-    public List<Event> fetch(String eventType, DateTime startTime, DateTime stopTime) {
+    public List<Event> fetch(String eventType, DateTime startTime, DateTime stopTime) throws ApplicationException {
         final MemoryStore<Event> store = eventStore.get(eventType);
-        if ( store != null)
-        {
+        if (store != null) {
             final DateTime lowerBound = startTime;
             final DateTime upperBound = stopTime;
             Predicate<Event> matchDates = new Predicate<Event>() {
                 public boolean apply(Event event) {
-                    return event!= null && event.getTimestamp().isAfter(lowerBound) && event.getTimestamp().isBefore(upperBound) ;
+                    return event != null && event.getTimestamp().isAfter(lowerBound) && event.getTimestamp().isBefore(upperBound);
                 }
             };
             final List<Event> events = store.readAll();
-            if (events != null && events.size() > 0)
-            {
-                ImmutableList.Builder<Event> builder= new ImmutableList.Builder<Event>();
-                return builder.addAll(Collections2.filter(events,matchDates)).build();
+            if (events != null && events.size() > 0) {
+                ImmutableList.Builder<Event> builder = new ImmutableList.Builder<Event>();
+                return builder.addAll(Collections2.filter(events, matchDates)).build();
             }
         }
         return null;
     }
 
     @Override
-    public List<Event> update(List<Event> events) {
+    public List<Event> update(List<Event> events) throws ApplicationException {
         if (events != null && events.size() > 0) {
             for (Event event : events) {
                 update(event);
@@ -100,7 +94,7 @@ public class MemoryEventStore extends ManageableBase implements EventStore {
     }
 
     @Override
-    public Event update(Event event) {
+    public Event update(Event event) throws ApplicationException {
         if (event != null) {
             MemoryStore<Event> store = null;
             if (!eventStore.containsKey(event.getType())) {
@@ -109,14 +103,11 @@ public class MemoryEventStore extends ManageableBase implements EventStore {
             } else {
                 store = eventStore.get(event.getType());
             }
-            try {
-                if ( store != null) {
-                    store.update(event.getKey().toString(), event);
-                }
-            } catch (ApplicationException error) {
-                logger.error("Failed to  add event", event);
-                event.put(Event.storeError, error.getMessage());
+
+            if (store != null) {
+                store.update(event.getKey().toString(), event);
             }
+
         }
         return event;
     }

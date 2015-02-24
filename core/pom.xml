@@ -11,7 +11,6 @@
 
     <artifactId>core</artifactId>
 
-
     <dependencies>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
@@ -33,30 +32,21 @@
             <artifactId>pf4j</artifactId>
             <version>${pf4j.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.apache.velocity</groupId>
             <artifactId>velocity</artifactId>
             <version>${velocity.version}</version>
         </dependency>
         <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
-            <version>2.2</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
-        </dependency>
-
-        <dependency>
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
             <version>${commons.configuration.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.squirrelframework</groupId>
+            <artifactId>squirrel-foundation</artifactId>
+            <version>${squirrel.version}</version>
+        </dependency>
     </dependencies>
 
 

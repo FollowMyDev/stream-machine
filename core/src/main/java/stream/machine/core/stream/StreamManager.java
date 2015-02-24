@@ -63,11 +63,11 @@ public class StreamManager extends ManageableBase {
     }
 
 
-    public Task getTask(String workerName, TaskType taskType) {
+    public Task getTask(String workerName, TaskType taskType) throws ApplicationException {
         return factory.build(taskType, workerName);
     }
 
-    public Map<String,Task> getTasks(TaskType taskType) {
+    public Map<String, Task> getTasks(TaskType taskType) throws ApplicationException {
         return factory.buildAll(taskType);
     }
 

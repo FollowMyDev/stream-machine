@@ -42,7 +42,7 @@ public class Store extends StoreBase implements EventStore {
 
 
     public Store(StoreManager storeManager) {
-        super("Elasticsearch.EventStore",storeManager);
+        super("Elasticsearch.EventStore", storeManager);
         this.useDateInIndex = false;
         this.useEventTypeInIndex = false;
         this.indexPattern = "logstash-";
@@ -78,7 +78,7 @@ public class Store extends StoreBase implements EventStore {
     }
 
     @Override
-    public List<Event> save(List<Event> events) {
+    public List<Event> save(List<Event> events) throws ApplicationException {
         Client client = storeManager.getClient();
         if (client == null) return events;
         BulkRequestBuilder bulkRequest = client.prepareBulk();
@@ -88,12 +88,9 @@ public class Store extends StoreBase implements EventStore {
             try {
                 String eventAsString = mapper.writeValueAsString(event);
                 bulkRequest.add(client.prepareIndex(buildIndex(eventType, eventTimeStamp), eventType, event.getKey().toString()).setSource(eventAsString));
-            } catch (ApplicationException error) {
-                logger.error(String.format("Request building failed for event %s", event.getKey().toString()), error);
-                event.put(Event.storeError, error.getMessage());
             } catch (JsonProcessingException error) {
                 logger.error(String.format("Json conversion failed for event %s", event.getKey().toString()), error);
-                event.put(Event.storeError, error.getMessage());
+                event.put("error", error.getMessage());
             }
         }
 
@@ -113,7 +110,7 @@ public class Store extends StoreBase implements EventStore {
                 if (filteredEvents != null && filteredEvents.size() == 1) {
                     Event filteredEvent = (Event) filteredEvents.toArray()[0];
                     if (response.getFailure() != null) {
-                        filteredEvent.put(Event.storeError, response.getFailure().getMessage());
+                        filteredEvent.put("error", response.getFailure().getMessage());
                     } else {
                         filteredEvent.put("version", response.getVersion());
                     }
@@ -124,7 +121,7 @@ public class Store extends StoreBase implements EventStore {
     }
 
     @Override
-    public Event save(Event event) {
+    public Event save(Event event) throws ApplicationException {
         Client client = storeManager.getClient();
         if (client == null) return event;
         IndexRequestBuilder indexRequest;
@@ -135,14 +132,9 @@ public class Store extends StoreBase implements EventStore {
             String eventAsString = mapper.writeValueAsString(event);
             indexRequest = client.prepareIndex(buildIndex(eventType, eventTimeStamp), eventType, event.getKey().toString())
                     .setSource(eventAsString);
-        } catch (ApplicationException error) {
-            logger.error(String.format("Request building failed for event %s", event.getKey().toString()), error);
-            event.put(Event.storeError, error.getMessage());
-            return event;
         } catch (JsonProcessingException error) {
             logger.error(String.format("Json conversion failed for event %s", event.getKey().toString()), error);
-            event.put(Event.storeError, error.getMessage());
-            return event;
+            throw new ApplicationException(String.format("Json conversion failed for event %s", event.getKey().toString()), error);
         }
 
         IndexResponse indexResponse = indexRequest.execute().actionGet();
@@ -151,7 +143,7 @@ public class Store extends StoreBase implements EventStore {
     }
 
     @Override
-    public List<Event> fetch(String eventType, DateTime startTime, DateTime stopTime) {
+    public List<Event> fetch(String eventType, DateTime startTime, DateTime stopTime) throws ApplicationException {
 
         Client client = storeManager.getClient();
         if (client == null) return null;
@@ -172,7 +164,7 @@ public class Store extends StoreBase implements EventStore {
 
             SearchResponse searchResponse = client.prepareSearch()
                     .setIndices(buildIndices(eventType, startTime, stopTime))
-                    .setIndicesOptions(IndicesOptions.fromOptions(true,false,false,false))
+                    .setIndicesOptions(IndicesOptions.fromOptions(true, false, false, false))
                     .setSearchType(SearchType.SCAN)
                     .setScroll(new TimeValue(60000))
                     .setQuery(query)
@@ -182,7 +174,7 @@ public class Store extends StoreBase implements EventStore {
                     try {
                         events.add(mapper.readValue(hit.getSourceAsString(), Event.class));
                     } catch (IOException error) {
-                        logger.error("Failed to serialize event", error);
+                        throw new ApplicationException("Failed to serialize event", error);
                     }
                 }
                 searchResponse = client.prepareSearchScroll(searchResponse.getScrollId())
@@ -195,19 +187,19 @@ public class Store extends StoreBase implements EventStore {
                 }
             }
         } catch (ApplicationException error) {
-            logger.error("Failed to build index list", error);
+            throw new ApplicationException("Failed to build index list", error);
         }
 
         return events;
     }
 
     @Override
-    public List<Event> update(List<Event> events) {
+    public List<Event> update(List<Event> events) throws ApplicationException {
         return null;
     }
 
     @Override
-    public Event update(Event event) {
+    public Event update(Event event) throws ApplicationException {
         return null;
     }
 

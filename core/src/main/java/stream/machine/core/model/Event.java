@@ -19,8 +19,6 @@ public class Event extends HashMap<String,Object> implements Serializable {
     public static String type = "type";
     public static String name = "name";
     public static String timestamp = "@timestamp";
-    public static String storeError = "storeError";
-    public static String transformError = "transformError";
 
     public Event() {
     }

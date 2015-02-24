@@ -11,20 +11,17 @@ import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
-import org.joda.time.DateTime;
 import ro.fortsoft.pf4j.Extension;
 import stream.machine.core.configuration.Configuration;
-import stream.machine.core.configuration.ConfigurationType;
 import stream.machine.core.exception.ApplicationException;
-import stream.machine.core.model.Event;
 import stream.machine.core.store.ConfigurationStore;
+import stream.machine.core.task.TaskType;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -52,7 +49,7 @@ public class Store extends StoreBase implements ConfigurationStore {
     }
 
     @Override
-    public <T extends Configuration> List<T> readAll(ConfigurationType type, Class<T> configurationClass) {
+    public <T extends Configuration> List<T> readAll(TaskType type, Class<T> configurationClass) throws ApplicationException{
 
         Client client = storeManager.getClient();
         if (client == null) return null;
@@ -72,7 +69,7 @@ public class Store extends StoreBase implements ConfigurationStore {
                 try {
                     configurations.add(mapper.readValue(hit.getSourceAsString(), configurationClass));
                 } catch (IOException error) {
-                    logger.error("Failed to serialize configuration", error);
+                    throw new ApplicationException("Failed to serialize configuration", error);
                 }
             }
             searchResponse = client.prepareSearchScroll(searchResponse.getScrollId())
@@ -89,7 +86,7 @@ public class Store extends StoreBase implements ConfigurationStore {
     }
 
     @Override
-    public <T extends Configuration> T readConfiguration(String name, ConfigurationType type, Class<T> configurationClass) {
+    public <T extends Configuration> T readConfiguration(String name, TaskType type, Class<T> configurationClass) throws ApplicationException{
         Client client = storeManager.getClient();
         if (client == null) return null;
         GetResponse response = client.prepareGet(this.index, type.toString(), name)
@@ -101,7 +98,7 @@ public class Store extends StoreBase implements ConfigurationStore {
                 return mapper.readValue(response.getSourceAsString(), configurationClass);
             }
         } catch (IOException error) {
-            logger.error("Failed to serialize configuration", error);
+            throw new ApplicationException("Failed to serialize configuration", error);
         }
         return null;
     }
@@ -117,8 +114,7 @@ public class Store extends StoreBase implements ConfigurationStore {
             indexRequest = client.prepareIndex(this.index, configuration.getType().toString(), configuration.getName())
                     .setSource(configurationAsString);
         } catch (JsonProcessingException error) {
-            logger.error(String.format("Json conversion failed for configuration %s", configuration.getName()), error);
-            return;
+            throw new ApplicationException(String.format("Json conversion failed for configuration %s", configuration.getName()), error);
         }
 
         IndexResponse indexResponse = indexRequest.execute().actionGet();
@@ -135,14 +131,11 @@ public class Store extends StoreBase implements ConfigurationStore {
                     .doc(configurationAsString);
             long version = client.update(updateRequest).get().getVersion();
         } catch (JsonProcessingException error) {
-            logger.error(String.format("Json conversion failed for configuration %s", configuration.getName()), error);
-            return;
+            throw new ApplicationException(String.format("Json conversion failed for configuration %s", configuration.getName()), error);
         } catch (InterruptedException error) {
-            logger.error(String.format("Update failed for configuration %s", configuration.getName(), error));
-            return;
+            throw new ApplicationException(String.format("Update failed for configuration %s", configuration.getName(), error));
         } catch (ExecutionException error) {
-            logger.error(String.format("Update failed for configuration %s", configuration.getName(), error));
-            return;
+            throw new ApplicationException(String.format("Update failed for configuration %s", configuration.getName(), error));
         }
         logger.info(String.format("Configuration %s was successfully updated", configuration.getName()));
     }

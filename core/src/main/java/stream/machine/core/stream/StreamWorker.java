@@ -44,7 +44,7 @@ public class StreamWorker extends UntypedActor {
     @Override
     public void preStart() {
         if (workerFactory != null) {
-            worker = workerFactory.build(workerType, workerName);
+            worker = null;
         }
 
     }

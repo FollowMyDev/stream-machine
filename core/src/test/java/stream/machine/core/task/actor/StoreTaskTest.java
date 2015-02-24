@@ -1,7 +1,8 @@
-package stream.machine.core.worker.actor;
+package stream.machine.core.task.actor;
 
 import akka.actor.ActorSystem;
 import akka.util.Timeout;
+import com.google.common.collect.ImmutableList;
 import org.joda.time.DateTime;
 import org.junit.*;
 import scala.concurrent.Await;
@@ -12,14 +13,14 @@ import stream.machine.core.configuration.transform.EventTransformerConfiguration
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.model.Event;
 import stream.machine.core.store.EventStore;
+import stream.machine.core.store.StoreManager;
 import stream.machine.core.store.memory.MemoryEventStore;
+import stream.machine.core.store.memory.MemoryStoreManager;
+import stream.machine.core.stream.StreamManager;
 import stream.machine.core.task.Task;
-import stream.machine.core.task.actor.StoreTask;
-import stream.machine.core.task.actor.TransformTask;
+import stream.machine.core.task.TaskType;
 
 import java.util.List;
-
-import static org.junit.Assert.*;
 
 public class StoreTaskTest {
     private static ActorSystem system;
@@ -64,10 +65,10 @@ public class StoreTaskTest {
         Timeout timeout = new Timeout(Duration.create(1000, "seconds"));
         Future<Event> futureA =  storeTask.process(eventA);
         Event resultA = Await.result(futureA, timeout.duration());
-        Assert.assertTrue(!resultA.containsKey(Event.storeError));
+        Assert.assertTrue(!resultA.containsKey(storeTask.getErrorField()));
         Future<Event> futureB =  storeTask.process(eventB);
         Event resultB = Await.result(futureB, timeout.duration());
-        Assert.assertTrue(!resultB.containsKey(Event.storeError));
+        Assert.assertTrue(!resultB.containsKey(storeTask.getErrorField()));
 
         List<Event> eventsOfTypeA = eventStore.fetch("TypeA",now.minusHours(1),now.plusHours(1));
         Assert.assertNotNull(eventsOfTypeA);
@@ -78,5 +79,38 @@ public class StoreTaskTest {
         Assert.assertEquals(1,eventsOfTypeB.size());
         Assert.assertEquals(17,eventsOfTypeB.get(0).get("b"));
 
+    }
+
+    @Test
+    public void testProcessMultiple() throws Exception {
+
+        StoreManager storeManager = new MemoryStoreManager();
+        storeManager.getConfigurationStore().saveConfiguration(EventStorageConfigurationTest.build("Task"));
+        StreamManager streamManager = new StreamManager(storeManager, 2550);
+        try {
+            streamManager.start();
+            Task task= streamManager.getTask("Task", TaskType.Store);
+            task.start();
+            ImmutableList.Builder<Event> builder  = new ImmutableList.Builder<Event>();
+            for (int index=0; index < 1000; index++)
+            {
+                Event eventA = new Event("TestName","TypeA");
+                eventA.put("a", 12);
+                builder.add(eventA);
+                Event eventB = new Event("TestName","TypeB");
+                eventB.put("b", 17);
+                builder.add(eventB);
+            }
+
+            Timeout timeout = new Timeout(Duration.create(1000, "seconds"));
+            Future<List<Event>> future = task.processMultiple(builder.build());
+            List<Event> result = Await.result(future, timeout.duration());
+
+            Assert.assertEquals(2000, result.size());
+            task.stop();
+        }
+        finally {
+            streamManager.stop();
+        }
     }
 }

@@ -1,7 +1,7 @@
 package stream.machine.core.configuration.store;
 
 import stream.machine.core.configuration.Configuration;
-import stream.machine.core.configuration.ConfigurationType;
+import stream.machine.core.task.TaskType;
 
 /**
  * Created by Stephane on 18/01/2015.
@@ -20,7 +20,7 @@ public class EventStorageConfiguration extends Configuration {
     }
 
     public EventStorageConfiguration(String name, int timeOutInMilliseconds,int bulkSize, int bulkPeriodInMilliseconds) {
-        super(name, ConfigurationType.Store);
+        super(name, TaskType.Store);
         this.timeOutInMilliseconds = timeOutInMilliseconds;
         this.bulkSize = bulkSize;
         this.bulkPeriodInMilliseconds = bulkPeriodInMilliseconds;

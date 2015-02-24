@@ -5,10 +5,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import ro.fortsoft.pf4j.Extension;
 import stream.machine.core.configuration.Configuration;
-import stream.machine.core.configuration.ConfigurationType;
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.manager.ManageableBase;
 import stream.machine.core.store.ConfigurationStore;
+import stream.machine.core.task.TaskType;
 
 import java.util.List;
 
@@ -36,7 +36,7 @@ public class MemoryConfigurationStore extends ManageableBase implements Configur
 
 
     @Override
-    public <T extends Configuration> List<T> readAll(ConfigurationType type, Class<T> configurationClass) {
+    public <T extends Configuration> List<T> readAll(TaskType type, Class<T> configurationClass) throws ApplicationException{
         List<Configuration> items = configurationStore.readAll();
         if (items != null && items.size() > 0) {
             Function<Configuration, T> convertTo = new Function<Configuration, T>() {
@@ -51,7 +51,7 @@ public class MemoryConfigurationStore extends ManageableBase implements Configur
     }
 
     @Override
-    public <T extends Configuration> T readConfiguration(String name,ConfigurationType type,Class<T> configurationClass) {
+    public <T extends Configuration> T readConfiguration(String name,TaskType type,Class<T> configurationClass) throws ApplicationException{
         Configuration item = configurationStore.read(name);
         return (T) item;
     }

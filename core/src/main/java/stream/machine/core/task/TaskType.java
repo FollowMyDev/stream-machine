@@ -5,5 +5,6 @@ package stream.machine.core.task;
  */
 public enum TaskType {
     Transform,
-    Store
+    Store,
+    Sequence
 }
