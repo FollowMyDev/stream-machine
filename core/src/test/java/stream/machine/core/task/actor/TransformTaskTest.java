@@ -7,7 +7,7 @@ import org.junit.*;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
-import stream.machine.core.configuration.transform.EventTransformerConfigurationTest;
+import stream.machine.core.configuration.TransformerConfigurationTest;
 import stream.machine.core.model.Event;
 import stream.machine.core.store.StoreManager;
 import stream.machine.core.store.memory.MemoryStoreManager;
@@ -42,7 +42,7 @@ public class TransformTaskTest {
     @Test
     public void testProcess() throws Exception {
 
-        Task transformTask = new TransformTask(EventTransformerConfigurationTest.build("Simple"), system);
+        Task transformTask = new TransformTask(TransformerConfigurationTest.build("Simple"), system);
 
         transformTask.start();
         Event event = getEvent();
@@ -66,11 +66,11 @@ public class TransformTaskTest {
     public void testProcessMultiple() throws Exception {
 
         StoreManager storeManager = new MemoryStoreManager();
-        storeManager.getConfigurationStore().saveConfiguration(EventTransformerConfigurationTest.build("Task"));
-        StreamManager streamManager = new StreamManager(storeManager, 2550);
+        storeManager.getConfigurationStore().saveConfiguration(TransformerConfigurationTest.build("Task"));
+        StreamManager streamManager = new StreamManager(storeManager,"[\"akka.tcp://StreamManager@localhost:2551\",\"akka.tcp://StreamManager@localhost:2552\"]", "localhost",2550);
         try {
             streamManager.start();
-            Task task= streamManager.getTask("Task", TaskType.Transform);
+            Task task= streamManager.getTask("Task");
             task.start();
             ImmutableList.Builder<Event> builder  = new ImmutableList.Builder<Event>();
             for (int index=0; index < 1000; index++)
@@ -83,6 +83,11 @@ public class TransformTaskTest {
             List<Event> result = Await.result(future, timeout.duration());
 
             Assert.assertEquals(1000, result.size());
+            for (int index=0; index < 1000; index++)
+            {
+                Assert.assertEquals(18, result.get(index).get("c"));
+            }
+
             task.stop();
         }
         finally {

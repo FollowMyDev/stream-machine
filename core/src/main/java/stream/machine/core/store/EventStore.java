@@ -1,6 +1,7 @@
 package stream.machine.core.store;
 
 import org.joda.time.DateTime;
+import ro.fortsoft.pf4j.ExtensionPoint;
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.model.Event;
 

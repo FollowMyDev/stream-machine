@@ -2,8 +2,7 @@ package stream.machine.core.task.actor;
 
 import akka.actor.ActorSystem;
 import com.google.common.collect.ImmutableMap;
-import stream.machine.core.configuration.store.EventStorageConfiguration;
-import stream.machine.core.configuration.transform.EventTransformerConfiguration;
+import stream.machine.core.configuration.Configuration;
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.store.StoreManager;
 import stream.machine.core.task.Task;
@@ -26,55 +25,45 @@ public class ActorTaskFactory implements TaskFactory {
     }
 
     @Override
-    public Task build(TaskType taskType, String workerName) throws ApplicationException {
-        switch (taskType) {
-            case Transform: {
-                if (storeManager != null && storeManager.getConfigurationStore() != null) {
-                    EventTransformerConfiguration configuration = storeManager.getConfigurationStore().readConfiguration(workerName, TaskType.Transform, EventTransformerConfiguration.class);
-                    if (configuration != null) {
-                        return new TransformTask(configuration, this.system);
-                    }
-                }
-            };
-            break;
-            case Store: {
-                if (storeManager != null && storeManager.getConfigurationStore() != null) {
-                    EventStorageConfiguration configuration = storeManager.getConfigurationStore().readConfiguration(workerName, TaskType.Store, EventStorageConfiguration.class);
-                    if (configuration != null) {
-                        return new StoreTask(storeManager.getEventStore(),configuration, this.system);
-                    }
-                }
-            };
-            break;
-        }
-        return null;
+    public Task build(String taskName) throws ApplicationException {
+        Configuration configuration = storeManager.getConfigurationStore().readConfiguration(taskName);
+        return build(configuration);
     }
 
     @Override
-    public Map<String, Task> buildAll(TaskType workerType) throws ApplicationException {
-        ImmutableMap.Builder<String, Task> builder = ImmutableMap.builder();
-        if (storeManager != null && storeManager.getConfigurationStore() != null) {
-            switch (workerType) {
-                case Transform: {
-                    List<EventTransformerConfiguration> workerConfigurations = storeManager.getConfigurationStore().readAll(TaskType.Transform, EventTransformerConfiguration.class);
-                    if (workerConfigurations != null && workerConfigurations.size() > 0) {
-                        for (EventTransformerConfiguration workerConfiguration : workerConfigurations) {
-                            builder.put(workerConfiguration.getName(), new TransformTask(workerConfiguration, this.system));
-                        }
-                    }
-                };
-                break;
-                case Store: {
-                    List<EventStorageConfiguration> workerConfigurations = storeManager.getConfigurationStore().readAll(TaskType.Store, EventStorageConfiguration.class);
-                    if (workerConfigurations != null && workerConfigurations.size() > 0) {
-                        for (EventStorageConfiguration workerConfiguration : workerConfigurations) {
-                            builder.put(workerConfiguration.getName(), new StoreTask(storeManager.getEventStore(),workerConfiguration, this.system));
-                        }
-                    }
-                };
-                break;
+    public Map<String, Task> buildAll(TaskType taskType) throws ApplicationException {
+        List<Configuration> configurations = storeManager.getConfigurationStore().readAll(taskType);
+        if (configurations != null && configurations.size() > 0) {
+            ImmutableMap.Builder<String, Task> builder = ImmutableMap.builder();
+            for (Configuration configuration : configurations) {
+                if (configuration != null) {
+                    builder.put(configuration.getName(), build(configuration));
+                }
+            }
+            return builder.build();
+        }
+        return null;
+    }
+    @Override
+    public Task build(Configuration configuration) {
+        if (configuration != null) {
+            switch (configuration.getType()) {
+                case Transform:
+                    return new TransformTask(configuration, system);
+                case Store:
+                    return new StoreTask(storeManager.getEventStore(), configuration, system);
+                case Convert:
+                    return new ConverterTask(configuration, system);
+                case Filter:
+                    return new FilterTask(configuration, system);
+                case Map:
+                    return new MapperTask(configuration, system);
+                case Sequence:
+                    return new SequenceTask(configuration, this, system);
+                case UserAgent:
+                    return new UserAgentParserTask(configuration, system);
             }
         }
-        return builder.build();
+        return null;
     }
 }

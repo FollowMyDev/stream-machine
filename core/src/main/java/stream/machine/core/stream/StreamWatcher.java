@@ -1,17 +1,20 @@
 package stream.machine.core.stream;
 
+import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
 import akka.cluster.Cluster;
 import akka.cluster.ClusterEvent;
+import akka.cluster.Member;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import stream.machine.core.monitor.Message;
 
 /**
  * Created by Stephane on 14/02/2015.
  */
 
 /**
- *  The class controls the consistency of the cluster. It centralizes all worker registrations to
+ * The class controls the consistency of the cluster. It centralizes all worker registrations to
  */
 public class StreamWatcher extends UntypedActor {
     private final LoggingAdapter log;
@@ -40,7 +43,6 @@ public class StreamWatcher extends UntypedActor {
     }
 
     /**
-     *
      * @param message
      * @return
      */
@@ -60,6 +62,8 @@ public class StreamWatcher extends UntypedActor {
 
         } else if (message instanceof ClusterEvent.MemberEvent) {
             // ignore
+
+        } else if (message instanceof Message) {
 
         } else {
             unhandled(message);

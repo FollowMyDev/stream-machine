@@ -46,7 +46,7 @@ public class Worker extends Application<WorkerConfiguration> {
             logger.info("... plugins loaded");
             ;
             logger.info("Starting stream manager ...");
-            streamManager = new StreamManager(extensionManager, configuration.getStreamPort());
+            streamManager = new StreamManager(extensionManager, configuration.getSeeds(),configuration.getHostname(),configuration.getStreamPort());
             streamManager.start();
             logger.info("... stream manager started");
 

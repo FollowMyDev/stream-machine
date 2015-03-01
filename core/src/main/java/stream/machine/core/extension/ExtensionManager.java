@@ -20,6 +20,8 @@ public class ExtensionManager extends ManageableBase implements StoreManager {
     private final Map<String, PluginClassLoader> extensions;
     private final String configurationStoreClassName;
     private final String eventStoreClassName;
+    private EventStore eventStore;
+    private ConfigurationStore configurationStore;
 
     public ExtensionManager(String configurationStoreClassName, String eventStoreClassName) {
         super("ExtensionManager");
@@ -39,12 +41,35 @@ public class ExtensionManager extends ManageableBase implements StoreManager {
                 this.extensions.put(extension, plugin.getPluginClassLoader());
             }
         }
+        configurationStore = getStore(this.configurationStoreClassName, ConfigurationStore.class);
+        if (configurationStore != null)
+        {
+            configurationStore.start();
+        }
+
+        eventStore = getStore(this.eventStoreClassName, EventStore.class);
+        if (eventStore != null)
+        {
+            eventStore.start();
+        }
+
+
         logger.info("... plugin loaded");
     }
 
     @Override
     public void stop() throws ApplicationException {
         logger.info("Unloaded plugins ...");
+        if (configurationStore != null)
+        {
+            configurationStore.stop();
+        }
+
+        if (eventStore != null)
+        {
+            eventStore.stop();
+        }
+
         pluginManager.stopPlugins();
         this.extensions.clear();
         logger.info("... plugins unloaded");
@@ -52,12 +77,12 @@ public class ExtensionManager extends ManageableBase implements StoreManager {
 
     @Override
     public ConfigurationStore getConfigurationStore() {
-        return getStore(this.configurationStoreClassName, ConfigurationStore.class);
+        return configurationStore;
     }
 
     @Override
     public EventStore getEventStore() {
-        return getStore(this.eventStoreClassName, EventStore.class);
+        return eventStore;
     }
 
     public <T extends Store> T getStore(String className, Class storeClass) {

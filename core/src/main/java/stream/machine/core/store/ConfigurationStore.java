@@ -10,14 +10,14 @@ import java.util.List;
 /**
  * Created by Stephane on 04/01/2015.
  */
-public interface ConfigurationStore extends Store, ExtensionPoint {
-    <T extends Configuration> List<T> readAll(TaskType type, Class<T> configurationClass) throws ApplicationException;
+public interface ConfigurationStore extends Store {
+    List<Configuration> readAll(TaskType type) throws ApplicationException;
 
-    <T extends Configuration> T readConfiguration(String name, TaskType type, Class<T> configurationClass) throws ApplicationException;
+    Configuration readConfiguration(String name) throws ApplicationException;
 
-    <T extends Configuration> void saveConfiguration(T configuration) throws ApplicationException;
+    void saveConfiguration(Configuration configuration) throws ApplicationException;
 
-    <T extends Configuration> void updateConfiguration(T configuration) throws ApplicationException;
+    void updateConfiguration(Configuration configuration) throws ApplicationException;
 
-    <T extends Configuration> void deleteConfiguration(T configuration) throws ApplicationException;
+    void deleteConfiguration(Configuration configuration) throws ApplicationException;
 }

@@ -7,11 +7,12 @@ import scala.Serializable;
 
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by Stephane on 06/12/2014.
  */
-public class Event extends HashMap<String,Object> implements Serializable {
+public class Event extends ConcurrentHashMap<String,Object> implements Serializable {
     private static DateTimeFormatter dateTimeFormatter = ISODateTimeFormat.dateTimeParser();
 
     //Identification of the event
@@ -32,11 +33,11 @@ public class Event extends HashMap<String,Object> implements Serializable {
     }
 
     public UUID getKey() {
-        return (UUID) get(Event.key);
+        return UUID.fromString((String) get(Event.key));
     }
 
     public void setKey(UUID key) {
-        put(Event.key, key);
+            put(Event.key, key.toString());
     }
 
     public String getName() {

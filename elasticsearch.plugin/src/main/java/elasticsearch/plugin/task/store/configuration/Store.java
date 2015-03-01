@@ -36,6 +36,7 @@ import java.util.concurrent.ExecutionException;
 public class Store extends StoreBase implements ConfigurationStore {
 
     private final static String index = "configuration";
+    private final static String type = "configurationData";
     private final ObjectMapper mapper;
 
     public Store(StoreManager storeManager) {
@@ -49,17 +50,18 @@ public class Store extends StoreBase implements ConfigurationStore {
     }
 
     @Override
-    public <T extends Configuration> List<T> readAll(TaskType type, Class<T> configurationClass) throws ApplicationException{
+    public List<Configuration> readAll(TaskType type) throws ApplicationException{
 
         Client client = storeManager.getClient();
         if (client == null) return null;
-        List<T> configurations = new ArrayList<T>();
+        List<Configuration> configurations = new ArrayList<Configuration>();
 
         boolean searchComplete = false;
         QueryBuilder typeQuery = QueryBuilders.matchQuery("type", type);
 
         SearchResponse searchResponse = client.prepareSearch()
-                .setIndices(this.index)
+                .setIndices(Store.index)
+                .setTypes(Store.type)
                 .setSearchType(SearchType.SCAN)
                 .setScroll(new TimeValue(60000))
                 .setQuery(typeQuery)
@@ -67,7 +69,7 @@ public class Store extends StoreBase implements ConfigurationStore {
         while (!searchComplete) {
             for (SearchHit hit : searchResponse.getHits().getHits()) {
                 try {
-                    configurations.add(mapper.readValue(hit.getSourceAsString(), configurationClass));
+                    configurations.add(mapper.readValue(hit.getSourceAsString(), Configuration.class));
                 } catch (IOException error) {
                     throw new ApplicationException("Failed to serialize configuration", error);
                 }
@@ -86,16 +88,16 @@ public class Store extends StoreBase implements ConfigurationStore {
     }
 
     @Override
-    public <T extends Configuration> T readConfiguration(String name, TaskType type, Class<T> configurationClass) throws ApplicationException{
+    public Configuration readConfiguration(String name) throws ApplicationException{
         Client client = storeManager.getClient();
         if (client == null) return null;
-        GetResponse response = client.prepareGet(this.index, type.toString(), name)
+        GetResponse response = client.prepareGet(Store.index, Store.type, name)
                 .execute()
                 .actionGet();
 
         try {
             if (response.isExists()) {
-                return mapper.readValue(response.getSourceAsString(), configurationClass);
+                return mapper.readValue(response.getSourceAsString(), Configuration.class);
             }
         } catch (IOException error) {
             throw new ApplicationException("Failed to serialize configuration", error);
@@ -104,14 +106,14 @@ public class Store extends StoreBase implements ConfigurationStore {
     }
 
     @Override
-    public <T extends Configuration> void saveConfiguration(T configuration) throws ApplicationException {
+    public void saveConfiguration(Configuration configuration) throws ApplicationException {
         Client client = storeManager.getClient();
         if (client == null) return;
         IndexRequestBuilder indexRequest;
 
         try {
             String configurationAsString = mapper.writeValueAsString(configuration);
-            indexRequest = client.prepareIndex(this.index, configuration.getType().toString(), configuration.getName())
+            indexRequest = client.prepareIndex(Store.index, Store.type, configuration.getName())
                     .setSource(configurationAsString);
         } catch (JsonProcessingException error) {
             throw new ApplicationException(String.format("Json conversion failed for configuration %s", configuration.getName()), error);
@@ -122,12 +124,12 @@ public class Store extends StoreBase implements ConfigurationStore {
     }
 
     @Override
-    public <T extends Configuration> void updateConfiguration(T configuration) throws ApplicationException {
+    public void updateConfiguration(Configuration configuration) throws ApplicationException {
         Client client = storeManager.getClient();
         if (client == null) return;
         try {
             String configurationAsString = mapper.writeValueAsString(configuration);
-            UpdateRequest updateRequest = new UpdateRequest(this.index, configuration.getType().toString(), configuration.getName())
+            UpdateRequest updateRequest = new UpdateRequest(Store.index, Store.type, configuration.getName())
                     .doc(configurationAsString);
             long version = client.update(updateRequest).get().getVersion();
         } catch (JsonProcessingException error) {
@@ -141,10 +143,10 @@ public class Store extends StoreBase implements ConfigurationStore {
     }
 
     @Override
-    public <T extends Configuration> void deleteConfiguration(T configuration) throws ApplicationException {
+    public void deleteConfiguration(Configuration configuration) throws ApplicationException {
         Client client = storeManager.getClient();
         if (client == null) return;
-        DeleteResponse response = client.prepareDelete(this.index, configuration.getType().toString(), configuration.getName())
+        DeleteResponse response = client.prepareDelete(Store.index, Store.type, configuration.getName())
                 .execute()
                 .actionGet();
         if (response.isFound()) {

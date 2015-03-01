@@ -1,33 +1,44 @@
 package stream.machine.core.configuration;
 
+import scala.Serializable;
 import stream.machine.core.task.TaskType;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by Stephane on 18/01/2015.
  */
-public class Configuration {
-    private String name;
-    private TaskType type;
-    private int version;
+public class Configuration extends ConcurrentHashMap<String, Object> implements Serializable {
 
-    public Configuration(){
+    public static String name = "name";
+    public static String type = "type";
+    public static String version = "version";
+
+
+    public Configuration() {
+    }
+
+    public Configuration(Configuration other) {
+        if (other != null) {
+            this.putAll(other);
+        }
     }
 
     public Configuration(String name, TaskType type) {
-        this.name = name;
-        this.type = type;
-        this.version = 0;
+        put(Configuration.name, name);
+        put(Configuration.type, type);
+        put(Configuration.version, 0);
     }
 
     public String getName() {
-        return name;
+        return (String) get(Configuration.name);
     }
 
     public TaskType getType() {
-        return type;
+        return TaskType.valueOf(get(Configuration.type).toString());
     }
 
     public int getVersion() {
-        return version;
+        return (Integer) get(Configuration.version);
     }
 }

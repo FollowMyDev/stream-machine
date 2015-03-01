@@ -1,8 +1,6 @@
 package stream.machine.core.store.memory;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import ro.fortsoft.pf4j.Extension;
 import stream.machine.core.configuration.Configuration;
 import stream.machine.core.exception.ApplicationException;
@@ -36,38 +34,36 @@ public class MemoryConfigurationStore extends ManageableBase implements Configur
 
 
     @Override
-    public <T extends Configuration> List<T> readAll(TaskType type, Class<T> configurationClass) throws ApplicationException{
-        List<Configuration> items = configurationStore.readAll();
-        if (items != null && items.size() > 0) {
-            Function<Configuration, T> convertTo = new Function<Configuration, T>() {
-                @Override
-                public T apply(Configuration item) {
-                    return (T) item;
+    public List<Configuration> readAll(TaskType type) throws ApplicationException {
+        ImmutableList.Builder<Configuration> builder = new ImmutableList.Builder<Configuration>();
+        List<Configuration> configurations = configurationStore.readAll();
+        if (configurations != null && configurations.size() > 0) {
+            for (Configuration configuration : configurations) {
+                if (configuration != null && configuration.getType() == type) {
+                    builder.add(configuration);
                 }
-            };
-            return ImmutableList.copyOf(Lists.transform(items, convertTo));
+            }
         }
-        return null;
+        return builder.build();
     }
 
     @Override
-    public <T extends Configuration> T readConfiguration(String name,TaskType type,Class<T> configurationClass) throws ApplicationException{
-        Configuration item = configurationStore.read(name);
-        return (T) item;
+    public  Configuration readConfiguration(String name) throws ApplicationException {
+        return configurationStore.read(name);
     }
 
     @Override
-    public <T extends Configuration> void saveConfiguration(T configuration) throws ApplicationException {
+    public  void saveConfiguration(Configuration configuration) throws ApplicationException {
         configurationStore.save(configuration.getName(), configuration);
     }
 
     @Override
-    public <T extends Configuration> void updateConfiguration(T configuration) throws ApplicationException {
+    public void updateConfiguration(Configuration configuration) throws ApplicationException {
         configurationStore.update(configuration.getName(), configuration);
     }
 
     @Override
-    public <T extends Configuration> void deleteConfiguration(T configuration) throws ApplicationException {
+    public void deleteConfiguration(Configuration configuration) throws ApplicationException {
         configurationStore.delete(configuration.getName());
     }
 }

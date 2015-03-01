@@ -2,21 +2,22 @@ package stream.machine.core.task.actor;
 
 import akka.actor.ActorSystem;
 import akka.util.Timeout;
+import org.joda.time.DateTime;
 import org.junit.*;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
-import stream.machine.core.configuration.sequence.SequenceConfigurationTest;
-import stream.machine.core.configuration.store.EventStorageConfigurationTest;
-import stream.machine.core.configuration.transform.EventTransformerConfigurationTest;
+import stream.machine.core.configuration.SequenceConfigurationTest;
+import stream.machine.core.configuration.EventStorageConfigurationTest;
+import stream.machine.core.configuration.TransformerConfigurationTest;
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.model.Event;
 import stream.machine.core.store.StoreManager;
-import stream.machine.core.store.memory.MemoryConfigurationStore;
-import stream.machine.core.store.memory.MemoryEventStore;
 import stream.machine.core.store.memory.MemoryStoreManager;
 import stream.machine.core.task.Task;
 import stream.machine.core.task.TaskFactory;
+
+import java.util.List;
 
 public class SequenceTaskTest {
     private static ActorSystem system;
@@ -40,10 +41,10 @@ public class SequenceTaskTest {
     @Before
     public void setUp() throws ApplicationException {
         storeManager = new MemoryStoreManager();
-        storeManager.getConfigurationStore().saveConfiguration(EventTransformerConfigurationTest.build("TaskA"));
+        storeManager.getConfigurationStore().saveConfiguration(TransformerConfigurationTest.build("TaskA"));
         storeManager.getConfigurationStore().saveConfiguration(EventStorageConfigurationTest.build("TaskB"));
         taskFactory = new ActorTaskFactory(storeManager,system);
-        sequenceTask = new SequenceTask("SequenceTaskTest", SequenceConfigurationTest.build("Simple"),taskFactory, system);
+        sequenceTask = new SequenceTask(SequenceConfigurationTest.build("SequenceTaskTest"),taskFactory, system);
         sequenceTask.start();
     }
 
@@ -58,6 +59,7 @@ public class SequenceTaskTest {
     public void testProcess() throws Exception {
         Assert.assertNotNull(sequenceTask);
 
+        DateTime now = new DateTime();
         Event eventA = new Event("TestName", "TypeA");
         eventA.put("a", 12);
         eventA.put("b", 11);
@@ -66,5 +68,9 @@ public class SequenceTaskTest {
         Timeout timeout = new Timeout(Duration.create(1000, "seconds"));
         Event resultA = Await.result(futureA, timeout.duration());
         Assert.assertTrue(!resultA.containsKey(sequenceTask.getErrorField()));
+        List<Event> eventsOfTypeA = storeManager.getEventStore().fetch("TypeA", now.minusHours(1), now.plusHours(1));
+        Assert.assertNotNull(eventsOfTypeA);
+        Assert.assertEquals(1,eventsOfTypeA.size());
+        Assert.assertEquals(23,eventsOfTypeA.get(0).get("c"));
     }
 }

@@ -21,6 +21,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.joda.time.DateTime;
+import ro.fortsoft.pf4j.Extension;
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.model.Event;
 import stream.machine.core.store.EventStore;
@@ -34,29 +35,27 @@ import java.util.UUID;
 /**
  * Created by Stephane on 15/02/2015.
  */
+@Extension
 public class Store extends StoreBase implements EventStore {
     private final boolean useDateInIndex;
     private final boolean useEventTypeInIndex;
     private final String indexPattern;
     private final ObjectMapper mapper;
 
-
     public Store(StoreManager storeManager) {
         super("Elasticsearch.EventStore", storeManager);
         this.useDateInIndex = false;
         this.useEventTypeInIndex = false;
-        this.indexPattern = "logstash-";
+        this.indexPattern = "stream";
         this.mapper = new ObjectMapper();
-
     }
 
     public Store() {
         super("Elasticsearch.EventStore", ElasticsearchPlugin.getStoreManager());
-        this.useDateInIndex = false;
-        this.useEventTypeInIndex = false;
-        this.indexPattern = "logstash-";
+        this.useDateInIndex =  ElasticsearchPlugin.useDateInIndex();
+        this.useEventTypeInIndex = ElasticsearchPlugin.useEventTypeInIndex();
+        this.indexPattern = ElasticsearchPlugin.getIndexPattern();
         this.mapper = new ObjectMapper();
-
     }
 
     public Store(StoreManager storeManager, boolean useDateInIndex, boolean useTypeIndex, String indexPattern) {

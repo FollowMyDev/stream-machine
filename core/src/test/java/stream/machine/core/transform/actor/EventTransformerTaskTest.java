@@ -6,7 +6,7 @@ import org.junit.*;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
-import stream.machine.core.configuration.transform.EventTransformerConfiguration;
+import stream.machine.core.configuration.TransformerConfiguration;
 import stream.machine.core.model.Event;
 import stream.machine.core.task.actor.TransformTask;
 
@@ -49,7 +49,7 @@ public class EventTransformerTaskTest {
         template.append(" ");
         template.append("#sum( \"a\" \"b\" \"c\")");
 
-        EventTransformerConfiguration configuration = new EventTransformerConfiguration("Simple",template.toString());
+        TransformerConfiguration configuration = new TransformerConfiguration("Simple",template.toString());
 
         TransformTask transformerTask = new TransformTask(configuration,system);
         transformerTask.start();

@@ -41,7 +41,7 @@ public class StoreTest extends ElasticsearchTestBase {
         DateTime date = new DateTime();
         store.save(new Event("A", "A"));
         store.save(new Event("B", "B"));
-        Thread.sleep(5000);
+        Thread.sleep(2000);
         List<Event> readEvents = store.fetch("A", date.minusDays(1), date.plusDays(1));
         Assert.assertEquals(1, readEvents.size());
         store.stop();

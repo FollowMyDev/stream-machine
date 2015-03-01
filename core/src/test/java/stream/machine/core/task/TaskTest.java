@@ -1,8 +1,7 @@
 package stream.machine.core.task;
 
-import akka.actor.ActorSystem;
 import org.junit.*;
-import stream.machine.core.configuration.transform.EventTransformerConfigurationTest;
+import stream.machine.core.configuration.TransformerConfigurationTest;
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.manager.ManageableBase;
 import stream.machine.core.store.StoreManager;
@@ -57,9 +56,9 @@ public class TaskTest extends ManageableBase{
     @Override
     public void start() throws ApplicationException {
         StoreManager storeManager = new MemoryStoreManager();
-        storeManager.getConfigurationStore().saveConfiguration(EventTransformerConfigurationTest.build("TaskA"));
-        storeManager.getConfigurationStore().saveConfiguration(EventTransformerConfigurationTest.build("TaskB"));
-        streamManager = new StreamManager(storeManager, 2550);
+        storeManager.getConfigurationStore().saveConfiguration(TransformerConfigurationTest.build("TaskA"));
+        storeManager.getConfigurationStore().saveConfiguration(TransformerConfigurationTest.build("TaskB"));
+        streamManager = new StreamManager(storeManager,"[\"akka.tcp://StreamManager@localhost:2551\",\"akka.tcp://StreamManager@localhost:2552\"]","localhost",2550);
         streamManager.start();
     }
 

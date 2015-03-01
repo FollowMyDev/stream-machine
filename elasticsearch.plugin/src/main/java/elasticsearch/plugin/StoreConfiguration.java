@@ -17,6 +17,9 @@ public class StoreConfiguration {
     private final boolean embedded;
     private final List<String> nodes;
     private final int retentionPeriod;
+    private final boolean useDateInIndex;
+    private final boolean useEventTypeInIndex;
+    private final String indexPattern;
     private final List<String> properties;
 
     public StoreConfiguration(String cluster) {
@@ -25,6 +28,9 @@ public class StoreConfiguration {
         this.nodes = null;
         this.retentionPeriod = 1;
         this.properties = null;
+        this.indexPattern = "logstash-";
+        this.useEventTypeInIndex = false;
+        this.useDateInIndex = true;
     }
 
     public StoreConfiguration(Configuration configuration) {
@@ -33,6 +39,9 @@ public class StoreConfiguration {
         this.nodes = configuration.getList("elasticsearch.nodes");
         this.retentionPeriod = configuration.getInt("elasticsearch.retentionPeriod");
         this.properties = configuration.getList("elasticsearch.property");
+        this.indexPattern = configuration.getString("elasticsearch.indexPattern");
+        this.useEventTypeInIndex = configuration.getBoolean("elasticsearch.useEventTypeInIndex");
+        this.useDateInIndex = configuration.getBoolean("elasticsearch.useDateInIndex");
     }
 
     public StoreConfiguration(String cluster, boolean embedded, List<String> nodes, int retentionPeriod, List<String> properties) {
@@ -41,6 +50,9 @@ public class StoreConfiguration {
         this.nodes = nodes;
         this.retentionPeriod = retentionPeriod;
         this.properties = properties;
+        this.indexPattern = "logstash-";
+        this.useEventTypeInIndex = false;
+        this.useDateInIndex = true;
     }
 
     public String getCluster() {
@@ -74,5 +86,17 @@ public class StoreConfiguration {
 
     public int getRetentionPeriod() {
         return retentionPeriod;
+    }
+
+    public boolean useDateInIndex() {
+        return useDateInIndex;
+    }
+
+    public boolean useEventTypeInIndex() {
+        return useEventTypeInIndex;
+    }
+
+    public String getIndexPattern() {
+        return indexPattern;
     }
 }

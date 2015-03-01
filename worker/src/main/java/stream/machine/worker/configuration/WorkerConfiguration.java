@@ -20,6 +20,9 @@ public class WorkerConfiguration extends Configuration {
     private String seeds;
 
     @JsonProperty
+    private String hostname;
+
+    @JsonProperty
     private int streamPort;
 
     public WorkerConfiguration(){
@@ -45,5 +48,9 @@ public class WorkerConfiguration extends Configuration {
 
     public int getStreamPort() {
         return streamPort;
+    }
+
+    public String getHostname() {
+        return hostname;
     }
 }

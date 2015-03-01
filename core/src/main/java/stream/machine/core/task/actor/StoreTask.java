@@ -4,7 +4,9 @@ import akka.actor.ActorSystem;
 import akka.dispatch.Futures;
 import com.google.common.collect.ImmutableList;
 import scala.concurrent.Future;
-import stream.machine.core.configuration.store.EventStorageConfiguration;
+import stream.machine.core.configuration.Configuration;
+import stream.machine.core.configuration.SequenceConfiguration;
+import stream.machine.core.configuration.StorageConfiguration;
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.manager.ManageableBase;
 import stream.machine.core.model.Event;
@@ -19,35 +21,40 @@ import static akka.dispatch.Futures.future;
 /**
  * Created by Stephane on 19/02/2015.
  */
-public class StoreTask extends ManageableBase implements Task {
+public class StoreTask extends TaskBase {
 
     private final EventStore store;
-    private final ActorSystem system;
     private final int bulkSize;
     private final int bulkPeriod;
 
 
-    public StoreTask(EventStore store, EventStorageConfiguration configuration, ActorSystem system) {
-        super(configuration.getName());
-        this.system = system;
+    public StoreTask(EventStore store, Configuration configuration, ActorSystem system) {
+        super(configuration, system);
+        StorageConfiguration storageConfiguration = new StorageConfiguration(configuration);
         this.store = store;
-        this.bulkSize = configuration.getBulkSize();
-        this.bulkPeriod = configuration.getBulkPeriodInMilliseconds();
+        this.bulkSize = storageConfiguration.getBulkSize();
+        this.bulkPeriod = storageConfiguration.getBulkPeriodInMilliseconds();
     }
 
     @Override
-    public Future<Event> process(Event event) {
-        if (this.store != null) {
-            return future(new DoProcess(this.store, event), system.dispatcher());
-        } else {
-            return Futures.successful(event);
+    protected boolean canProcess() {
+        return (store != null);
+    }
+
+    @Override
+    protected Event doProcess(Event event) {
+        try {
+            return store.save(event);
+        } catch (ApplicationException error) {
+            event.put(getErrorField(),error.getMessage());
         }
+        return event;
     }
 
     @Override
     public Future<List<Event>> processMultiple(List<Event> events) {
         if (this.store != null) {
-            return future(new DoProcessMultiple(this.store, events), system.dispatcher());
+            return future(new DoProcessMultiple(this.store, events), getSystem().dispatcher());
         } else {
             return Futures.successful((List<Event>) ImmutableList.copyOf(events));
         }
@@ -67,24 +74,6 @@ public class StoreTask extends ManageableBase implements Task {
     @Override
     public void stop() throws ApplicationException {
 
-    }
-
-    private class DoProcess implements Callable<Event> {
-
-        private final Event event;
-        private final EventStore store;
-
-        public DoProcess(EventStore store, Event event) {
-            this.store = store;
-            this.event = event;
-        }
-
-        public Event call() throws Exception {
-            if (store != null) {
-                return store.save(event);
-            }
-            return event;
-        }
     }
 
     private class DoProcessMultiple implements Callable<List<Event>> {

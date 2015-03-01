@@ -59,152 +59,141 @@
                 </executions>
             </plugin>
 
+            <!--
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>2.18.1</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>2.7</version>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <overwrite>true</overwrite>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/src/main/resources</directory>
+                                    <includes>
+                                        <include>worker.yaml</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <directory>${basedir}/scripts/windows</directory>
+                                    <includes>
+                                        <include>*.bat</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <id>start-worker</id>
+                        <phase>pre-integration-test</phase>
+                        <configuration>
+                            <target>
+                                <exec executable="cmd"
+                                      dir="${project.build.directory}"
+                                      spawn="true">
+                                    <arg value="${run.command.additionnal.arg}"/>
+                                    <arg value="startWorker.bat ${project.build.finalName}.jar server worker.yaml"/>
+                                </exec>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>io.gatling</groupId>
+                <artifactId>gatling-maven-plugin</artifactId>
+                <version>${gatling-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>configure</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <configFolder>src/test/resources/config</configFolder>
+                            <dataFolder>src/test/resources/data</dataFolder>
+                            <resultsFolder>target/gatling/results</resultsFolder>
+                            <requestBodiesFolder>src/test/resources/request-bodies</requestBodiesFolder>
+                            <simulationsFolder>src/test/simulations</simulationsFolder>
+                            <simulationClass>Configuration</simulationClass>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>validate</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <configFolder>src/test/resources/config</configFolder>
+                            <dataFolder>src/test/resources/data</dataFolder>
+                            <resultsFolder>target/gatling/results</resultsFolder>
+                            <requestBodiesFolder>src/test/resources/request-bodies</requestBodiesFolder>
+                            <simulationsFolder>src/test/simulations</simulationsFolder>
+                            <simulationClass>Transform</simulationClass>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <id>stop-worker</id>
+                        <phase>post-integration-test</phase>
+                        <configuration>
+                            <target>
+                                <exec executable="cmd"
+                                      dir="${project.build.directory}"
+                                      spawn="true">
+                                    <arg value="${run.command.additionnal.arg}"/>
+                                    <arg value="stopWorker.bat"/>
+                                </exec>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+-->
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>integration-tests</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>2.18.1</version>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                    <goal>verify</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <version>2.7</version>
-                        <executions>
-                            <execution>
-                                <id>copy-resources</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${project.build.directory}</outputDirectory>
-                                    <overwrite>true</overwrite>
-                                    <resources>
-                                        <resource>
-                                            <directory>${basedir}/src/main/resources</directory>
-                                            <includes>
-                                                <include>worker.yaml</include>
-                                            </includes>
-                                        </resource>
-                                        <resource>
-                                            <directory>${basedir}/scripts/windows</directory>
-                                            <includes>
-                                                <include>*.bat</include>
-                                            </includes>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <plugin>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                        <version>1.6</version>
-                        <executions>
-                            <execution>
-                                <id>start-worker</id>
-                                <phase>pre-integration-test</phase>
-                                <configuration>
-                                    <target>
-                                        <exec executable="cmd"
-                                              dir="${project.build.directory}"
-                                              spawn="true">
-                                            <arg value="${run.command.additionnal.arg}"/>
-                                            <arg value="startWorker.bat ${project.build.finalName}.jar server worker.yaml"/>
-                                        </exec>
-                                    </target>
-                                </configuration>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>io.gatling</groupId>
-                        <artifactId>gatling-maven-plugin</artifactId>
-                        <version>${gatling-plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <id>configure</id>
-                                <phase>integration-test</phase>
-                                <goals>
-                                    <goal>execute</goal>
-                                </goals>
-                                <configuration>
-                                    <!-- Default values -->
-                                    <configFolder>src/test/resources/config</configFolder>
-                                    <dataFolder>src/test/resources/data</dataFolder>
-                                    <resultsFolder>target/gatling/results</resultsFolder>
-                                    <requestBodiesFolder>src/test/resources/request-bodies</requestBodiesFolder>
-                                    <simulationsFolder>src/test/simulations</simulationsFolder>
-                                    <simulationClass>Configuration</simulationClass>
-                                </configuration>
-                            </execution>
-
-                            <execution>
-                                <id>validate</id>
-                                <phase>integration-test</phase>
-                                <goals>
-                                    <goal>execute</goal>
-                                </goals>
-                                <configuration>
-                                    <!-- Default values -->
-                                    <configFolder>src/test/resources/config</configFolder>
-                                    <dataFolder>src/test/resources/data</dataFolder>
-                                    <resultsFolder>target/gatling/results</resultsFolder>
-                                    <requestBodiesFolder>src/test/resources/request-bodies</requestBodiesFolder>
-                                    <simulationsFolder>src/test/simulations</simulationsFolder>
-                                    <simulationClass>Transform</simulationClass>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <plugin>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                        <version>1.6</version>
-                        <executions>
-                            <execution>
-                                <id>stop-worker</id>
-                                <phase>post-integration-test</phase>
-                                <configuration>
-                                    <target>
-                                        <exec executable="cmd"
-                                              dir="${project.build.directory}"
-                                              spawn="true">
-                                            <arg value="${run.command.additionnal.arg}"/>
-                                            <arg value="stopWorker.bat"/>
-                                        </exec>
-                                    </target>
-                                </configuration>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 
     <dependencies>
         <dependency>

@@ -4,6 +4,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import org.joda.time.DateTime;
+import ro.fortsoft.pf4j.Extension;
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.manager.ManageableBase;
 import stream.machine.core.model.Event;
@@ -16,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Created by Stephane on 16/02/2015.
  */
+@Extension
 public class MemoryEventStore extends ManageableBase implements EventStore {
     private final Map<String, MemoryStore<Event>> eventStore;
 

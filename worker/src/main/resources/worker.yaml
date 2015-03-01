@@ -1,7 +1,8 @@
 configurationStore: stream.machine.core.store.memory.MemoryConfigurationStore
 eventStore: stream.machine.core.store.memory.MemoryEventStore
+hostname : "localhost"
 streamPort : 2551
-seeds : akka.tcp://StreamManager@localhost:2551,akka.tcp://StreamManager@localhost:2552
+seeds : "[\"akka.tcp://StreamManager@localhost:2551\",\"akka.tcp://StreamManager@localhost:2552\"]"
 timeoutInSeconds : 5
 server:
   applicationConnectors:

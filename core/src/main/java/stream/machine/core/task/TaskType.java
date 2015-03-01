@@ -6,5 +6,9 @@ package stream.machine.core.task;
 public enum TaskType {
     Transform,
     Store,
-    Sequence
+    Sequence,
+    UserAgent,
+    Map,
+    Filter,
+    Convert
 }

@@ -8,8 +8,7 @@ import org.junit.*;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
-import stream.machine.core.configuration.store.EventStorageConfigurationTest;
-import stream.machine.core.configuration.transform.EventTransformerConfigurationTest;
+import stream.machine.core.configuration.EventStorageConfigurationTest;
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.model.Event;
 import stream.machine.core.store.EventStore;
@@ -86,10 +85,10 @@ public class StoreTaskTest {
 
         StoreManager storeManager = new MemoryStoreManager();
         storeManager.getConfigurationStore().saveConfiguration(EventStorageConfigurationTest.build("Task"));
-        StreamManager streamManager = new StreamManager(storeManager, 2550);
+        StreamManager streamManager = new StreamManager(storeManager,"[\"akka.tcp://StreamManager@localhost:2550\",\"akka.tcp://StreamManager@localhost:2552\"]","localhost",2550);
         try {
             streamManager.start();
-            Task task= streamManager.getTask("Task", TaskType.Store);
+            Task task= streamManager.getTask("Task");
             task.start();
             ImmutableList.Builder<Event> builder  = new ImmutableList.Builder<Event>();
             for (int index=0; index < 1000; index++)
@@ -108,6 +107,10 @@ public class StoreTaskTest {
 
             Assert.assertEquals(2000, result.size());
             task.stop();
+        }
+        catch (Exception error)
+        {
+            Assert.fail(error.getMessage());
         }
         finally {
             streamManager.stop();

@@ -1,12 +1,10 @@
-package stream.machine.core.configuration.transform;
+package stream.machine.core.configuration;
 
 import junit.framework.Assert;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
-public class EventTransformerConfigurationTest {
-    public static EventTransformerConfiguration build(String configurationName )
+public class TransformerConfigurationTest {
+    public static TransformerConfiguration build(String configurationName )
     {
         StringBuilder template = new StringBuilder("");
         template.append("#macro( put $key $value )");
@@ -22,13 +20,13 @@ public class EventTransformerConfigurationTest {
         template.append(" ");
         template.append("#sum( \"a\" \"b\" \"c\")");
 
-        return new EventTransformerConfiguration(configurationName, template.toString());
+        return new TransformerConfiguration(configurationName, template.toString());
 
     }
 
     @Test
     public void testGetTemplate() throws Exception {
-        EventTransformerConfiguration configuration = build("Test");
+        TransformerConfiguration configuration = build("Test");
         Assert.assertNotNull(configuration.getTemplate());
     }
 
