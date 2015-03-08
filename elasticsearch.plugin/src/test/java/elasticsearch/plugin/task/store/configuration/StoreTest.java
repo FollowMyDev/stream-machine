@@ -102,7 +102,7 @@ public class StoreTest extends ElasticsearchTestBase {
             Configuration readConfiguration = new StorageConfiguration(store.readConfiguration("S"));
             Assert.assertEquals(writeConfiguration.getType(), readConfiguration.getType());
 
-            store.deleteConfiguration(writeConfiguration);
+            store.deleteConfiguration(writeConfiguration.getName());
             readConfiguration = store.readConfiguration("S");
             Assert.assertNull(readConfiguration);
 

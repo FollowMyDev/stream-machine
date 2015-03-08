@@ -19,5 +19,5 @@ public interface ConfigurationStore extends Store {
 
     void updateConfiguration(Configuration configuration) throws ApplicationException;
 
-    void deleteConfiguration(Configuration configuration) throws ApplicationException;
+    void deleteConfiguration(String name) throws ApplicationException;
 }

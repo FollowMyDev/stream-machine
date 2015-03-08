@@ -1,14 +1,10 @@
 package stream.machine.worker.service;
 
 import com.codahale.metrics.annotation.Timed;
+import stream.machine.core.communication.MessageProducer;
 import stream.machine.core.configuration.Configuration;
-import stream.machine.core.configuration.StorageConfiguration;
-import stream.machine.core.configuration.TransformerConfiguration;
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.manager.ManageableBase;
-import stream.machine.core.monitor.ConfigurationMessage;
-import stream.machine.core.monitor.Message;
-import stream.machine.core.monitor.MonitorProducer;
 import stream.machine.core.store.ConfigurationStore;
 import stream.machine.core.store.StoreManager;
 import stream.machine.core.stream.StreamManager;
@@ -23,9 +19,9 @@ import java.util.List;
  */
 @Path("/configuration")
 @Produces(MediaType.APPLICATION_JSON)
-public class ConfigurationService extends ManageableBase{
+public class ConfigurationService extends ManageableBase {
     private final ConfigurationStore configurationStore;
-    private final MonitorProducer monitorProducer;
+    private final MessageProducer monitorProducer;
 
     public ConfigurationService(StreamManager streamManager) {
         super("ConfigurationService");
@@ -60,7 +56,7 @@ public class ConfigurationService extends ManageableBase{
     @GET
     @Timed
     @Path("read/{name}")
-    public Configuration readConfigurationEventTransformerConfiguration(@PathParam("name")String name) {
+    public Configuration readConfigurationEventTransformerConfiguration(@PathParam("name") String name) {
         if (this.configurationStore != null) {
             try {
                 return this.configurationStore.readConfiguration(name);
@@ -78,8 +74,7 @@ public class ConfigurationService extends ManageableBase{
         if (this.configurationStore != null) {
             this.configurationStore.saveConfiguration(configuration);
             if (this.monitorProducer != null) {
-                Message configurationMessage = new ConfigurationMessage(ServiceTopics.TaskConfigurationCreated,configuration);
-                monitorProducer.send(configurationMessage);
+                monitorProducer.send(ServiceTopics.TaskConfigurationCreated, configuration);
             }
         }
     }
@@ -91,21 +86,19 @@ public class ConfigurationService extends ManageableBase{
         if (this.configurationStore != null) {
             this.configurationStore.updateConfiguration(configuration);
             if (this.monitorProducer != null) {
-                Message configurationMessage = new ConfigurationMessage(ServiceTopics.TaskConfigurationUpdated,configuration);
-                monitorProducer.send(configurationMessage);
+                monitorProducer.send(ServiceTopics.TaskConfigurationUpdated, configuration);
             }
         }
     }
 
     @DELETE
     @Timed
-    @Path("delete")
-    public void deleteConfiguration(Configuration configuration) throws ApplicationException {
+    @Path("delete/{name}")
+    public void deleteConfiguration(@PathParam("name") String name) throws ApplicationException {
         if (this.configurationStore != null) {
-            this.configurationStore.deleteConfiguration(configuration);
+            this.configurationStore.deleteConfiguration(name);
             if (this.monitorProducer != null) {
-                Message configurationMessage = new ConfigurationMessage(ServiceTopics.TaskConfigurationDeleted,configuration);
-                monitorProducer.send(configurationMessage);
+                monitorProducer.send(ServiceTopics.TaskConfigurationDeleted, name);
             }
         }
     }

@@ -12,20 +12,25 @@
     <artifactId>core</artifactId>
 
     <dependencies>
+        <!--<dependency>-->
+            <!--<groupId>com.typesafe.akka</groupId>-->
+            <!--<artifactId>akka-actor_2.10</artifactId>-->
+            <!--<version>${akka.version}</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>com.typesafe.akka</groupId>-->
+            <!--<artifactId>akka-cluster_2.10</artifactId>-->
+            <!--<version>${akka.version}</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>com.typesafe.akka</groupId>-->
+            <!--<artifactId>akka-contrib_2.10</artifactId>-->
+            <!--<version>2.3.8</version>-->
+        <!--</dependency>-->
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor_2.10</artifactId>
-            <version>${akka.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-cluster_2.10</artifactId>
-            <version>${akka.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-contrib_2.10</artifactId>
-            <version>2.3.8</version>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>3.4.1</version>
         </dependency>
         <dependency>
             <groupId>ro.fortsoft.pf4j</groupId>

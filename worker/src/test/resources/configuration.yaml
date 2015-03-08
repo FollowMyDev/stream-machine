@@ -3,16 +3,12 @@ eventStore: stream.machine.core.store.memory.MemoryEventStore
 hostname : "localhost"
 streamPort : 2551
 members :
-  - "127.0.0.1"
+  - "localhost"
 timeoutInSeconds : 5
-concurrency : 50
 server:
   applicationConnectors:
       - type: http
-        port: 9874
-        acceptorThreads: 8
-        selectorThreads: 16
-        acceptQueueSize: 4096
+        port: 9875
   adminConnectors:
       - type: http
-        port: 9974
+        port: 9975

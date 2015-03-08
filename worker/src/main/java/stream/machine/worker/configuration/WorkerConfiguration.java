@@ -3,6 +3,8 @@ package stream.machine.worker.configuration;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
 
+import java.util.List;
+
 /**
  * Created by Stephane on 07/01/2015.
  */
@@ -17,7 +19,7 @@ public class WorkerConfiguration extends Configuration {
     private int timeoutInSeconds;
 
     @JsonProperty
-    private String seeds;
+    private List<String> members;
 
     @JsonProperty
     private String hostname;
@@ -25,9 +27,13 @@ public class WorkerConfiguration extends Configuration {
     @JsonProperty
     private int streamPort;
 
+    @JsonProperty
+    private int concurrency;
+
     public WorkerConfiguration(){
         // set default values for non required fields
         timeoutInSeconds = 5;
+        concurrency = 20;
     }
 
     public String getConfigurationStore() {
@@ -42,8 +48,8 @@ public class WorkerConfiguration extends Configuration {
         return timeoutInSeconds;
     }
 
-    public String getSeeds() {
-        return seeds;
+    public List<String> getMembers() {
+        return members;
     }
 
     public int getStreamPort() {
@@ -52,5 +58,9 @@ public class WorkerConfiguration extends Configuration {
 
     public String getHostname() {
         return hostname;
+    }
+
+    public int getConcurrency() {
+        return concurrency;
     }
 }

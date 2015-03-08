@@ -3,16 +3,14 @@ package stream.machine.core.model;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
-import scala.Serializable;
 
-import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by Stephane on 06/12/2014.
  */
-public class Event extends ConcurrentHashMap<String,Object> implements Serializable {
+public class Event extends ConcurrentHashMap<String, Object> {
     private static DateTimeFormatter dateTimeFormatter = ISODateTimeFormat.dateTimeParser();
 
     //Identification of the event
@@ -37,7 +35,7 @@ public class Event extends ConcurrentHashMap<String,Object> implements Serializa
     }
 
     public void setKey(UUID key) {
-            put(Event.key, key.toString());
+        put(Event.key, key.toString());
     }
 
     public String getName() {

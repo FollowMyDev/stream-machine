@@ -63,7 +63,7 @@ public class MemoryConfigurationStore extends ManageableBase implements Configur
     }
 
     @Override
-    public void deleteConfiguration(Configuration configuration) throws ApplicationException {
-        configurationStore.delete(configuration.getName());
+    public void deleteConfiguration(String name) throws ApplicationException {
+        configurationStore.delete(name);
     }
 }

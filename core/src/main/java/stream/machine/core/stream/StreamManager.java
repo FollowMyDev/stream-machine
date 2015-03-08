@@ -1,120 +1,236 @@
 package stream.machine.core.stream;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.PoisonPill;
-import akka.actor.Props;
-import akka.contrib.pattern.ClusterSingletonManager;
-import akka.contrib.pattern.ClusterSingletonProxy;
-import akka.contrib.pattern.DistributedPubSubExtension;
-import akka.contrib.pattern.DistributedPubSubMediator;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
+
+import com.google.common.util.concurrent.MoreExecutors;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.core.*;
+import stream.machine.core.communication.MessageConsumer;
+import stream.machine.core.communication.MessageProducer;
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.manager.ManageableBase;
-import stream.machine.core.monitor.Message;
-import stream.machine.core.monitor.MonitorConsumer;
-import stream.machine.core.monitor.MonitorProducer;
-import stream.machine.core.monitor.RegisterMessage;
-import stream.machine.core.monitor.actor.MonitorPublisher;
-import stream.machine.core.monitor.actor.MonitorSubscriber;
+import stream.machine.core.model.Event;
 import stream.machine.core.store.StoreManager;
-import stream.machine.core.task.Task;
+import stream.machine.core.task.StoredTaskFactory;
 import stream.machine.core.task.TaskFactory;
-import stream.machine.core.task.TaskType;
-import stream.machine.core.task.actor.ActorTaskFactory;
 
+import java.util.List;
 import java.util.Map;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
 
 /**
  * Created by Stephane on 14/02/2015.
  */
-public class StreamManager extends ManageableBase implements MonitorProducer {
+public class StreamManager extends ManageableBase implements MessageProducer {
     private final int communicationPort;
     private final StoreManager storeManager;
-    private final String seeds;
+    private final List<String> members;
+    private final int concurrency;
     private final String hostname;
-    private ActorSystem system;
-    private ActorRef publisher;
-    private Queue<ActorRef> consumers;
-    private ActorRef watcher;
-    private ActorRef localMaster;
-    private ActorRef master;
-    private ActorTaskFactory factory;
+    private StoredTaskFactory factory;
+    private HazelcastInstance instance;
+    private Map<UUID, Event> events;
 
-    public StreamManager(StoreManager storeManager, String seeds, String hostname, int communicationPort) {
+    private Thread masterThread;
+    private AtomicBoolean isMaster;
+    private CountDownLatch isRunning;
+    private ExecutorService executor;
+
+    public StreamManager(StoreManager storeManager,
+                         List<String> members,
+                         String hostname,
+                         int communicationPort,
+                         int concurrency) {
         super("StreamManager");
         this.storeManager = storeManager;
         this.communicationPort = communicationPort;
-        this.consumers = new ConcurrentLinkedQueue<ActorRef>();
-        this.seeds = seeds;
+        this.members = members;
         this.hostname = hostname;
+        this.concurrency = concurrency;
     }
 
     @Override
     public void start() throws ApplicationException {
-        // Override the configuration of the port
-        Config config = ConfigFactory
-                .parseString("akka.remote.netty.tcp.port=" + communicationPort)
-                .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname = " + hostname))
-                .withFallback(ConfigFactory.parseString("akka.cluster.seed-nodes = " + seeds))
-                .withFallback(ConfigFactory.load("master"));
+        logger.info("Starting StreamManager ...");
+        if (this.instance != null) {
+            stop();
+        }
+        try {
+            logger.info(String.format("Creating thread pool with %d threads", this.concurrency));
+            if (this.concurrency <= 0) {
+                throw new ApplicationException("Concurrency  must be greater than zero");
+            }
+            this.executor = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(this.concurrency));
+
+            logger.info("Creating task factory");
+            if (this.storeManager == null) {
+                throw new ApplicationException("Store manager cannot be null");
+            }
+            this.factory = new StoredTaskFactory(this.storeManager, this.executor);
+
+            logger.info("Creating distributed cache");
+            Config configuration = buildConfig();
+            this.instance = Hazelcast.newHazelcastInstance(configuration);
+            this.isMaster = new AtomicBoolean(false);
+            this.isRunning = new CountDownLatch(1);
+            this.masterThread = new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        if (instance == null || isRunning.getCount()==0) return;
+                        do {
+                            logger.debug("Trying to acquire master token ...");
+                            Lock masterLock = instance.getLock("masterLock");
+
+                            if (masterLock.tryLock(100, TimeUnit.MILLISECONDS)) {
+                                try {
+                                    isMaster.set(true);
+                                    logger.info("Master token acquired ...");
+                                    isRunning.await();
+                                } finally {
+                                    masterLock.unlock();
+                                    isMaster.set(false);
+                                }
+                            } else {
+                                isMaster.set(false);
+                            }
+                        }
+                        while (!isRunning.await(100, TimeUnit.MILLISECONDS));
+                    } catch (InterruptedException error) {
+                        isMaster.set(false);
+                    }
+
+                }
+            };
+            this.masterThread.start();
+        } finally {
+            logger.info("... StreamManager started.");
+        }
 
 
-        this.system = ActorSystem.create(getName(), config);
+    }
 
-        factory = new ActorTaskFactory(storeManager, system);
+    private Config buildConfig() {
+        Config configuration = new Config();
 
-        watcher = system.actorOf(Props.create(StreamWatcher.class), "watcher");
+        if (this.communicationPort != 0) {
+            configuration.getNetworkConfig().setPort(this.communicationPort);
+            configuration.getNetworkConfig().setPortAutoIncrement(false);
+        } else {
+            configuration.getNetworkConfig().setPortAutoIncrement(true);
+        }
 
-        publisher = system.actorOf(Props.create(MonitorPublisher.class), "publisher");
+        if (this.members != null) {
+            NetworkConfig network = configuration.getNetworkConfig();
+            JoinConfig join = network.getJoin();
+            join.getMulticastConfig().setEnabled(false);
+            for (String member : this.members) {
+                join.getTcpIpConfig().addMember(member);
+            }
+            join.getTcpIpConfig().setEnabled(true);
+        }
 
-        localMaster = system.actorOf(ClusterSingletonManager.defaultProps(Props.create(StreamMaster.class), "master", PoisonPill.getInstance(), "master"), "streamService");
+//        MapConfig mapCfg = new MapConfig();
+//        mapCfg.setName("events");
+//        mapCfg.setBackupCount(2);
+//        mapCfg.getMaxSizeConfig().setSize(1000000);
+//        mapCfg.setTimeToLiveSeconds(300);
 
-        master = system.actorOf(ClusterSingletonProxy.defaultProps("user/streamService/master", "master"), "masterProxy");
+//        MapStoreConfig mapStoreCfg = new MapStoreConfig();
+//        mapStoreCfg.setClassName("com.hazelcast.examples.DummyStore").setEnabled(true);
+//        mapCfg.setMapStoreConfig(mapStoreCfg);
+
+//        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+//        nearCacheConfig.setMaxSize(1000).setMaxIdleSeconds(120).setTimeToLiveSeconds(300);
+//        mapCfg.setNearCacheConfig(nearCacheConfig);
+
+//        configuration.addMapConfig(mapCfg);
+        return configuration;
     }
 
     @Override
     public void stop() throws ApplicationException {
-        system.shutdown();
+        if (this.instance != null) {
+            this.isRunning.countDown();
+            try {
+                this.masterThread.join(10);
+            } catch (InterruptedException error) {
+
+            }
+            this.instance.shutdown();
+            this.instance = null;
+        }
+    }
+
+    public StoreManager getStoreManager() {
+        return storeManager;
     }
 
     public TaskFactory getTaskFactory() {
         return factory;
     }
 
-    public void send(Message query) throws ApplicationException {
-        if (publisher != null) {
+    public boolean isMaster() {
+        return isMaster.get();
+    }
+
+    public boolean isRunning() {
+        return (isRunning.getCount() > 0);
+    }
+
+    @Override
+    public <T> void send(String topicName, T data) throws ApplicationException {
+        logger.info(String.format("Sending data to topic %s ...", topicName));
+        if (this.instance != null) {
             try {
-                publisher.tell(query, watcher);
-                logger.info("Message sent");
+                ITopic topic = instance.getTopic(topicName);
+                if ( topic != null) {
+                    topic.publish(data);
+                    logger.info(String.format("... data sent to topic %s", topicName));
+                }
             } catch (Exception error) {
                 throw new ApplicationException("Sending message failed", error);
+            } finally {
+                logger.debug(String.format("Message sent on topic %s", topicName));
             }
         }
     }
 
-    public void register(String topic, MonitorConsumer consumer) {
-        if (topic != null && consumer != null) {
-            ActorRef subscriber = system.actorOf(MonitorSubscriber.props(consumer, topic), String.format("%s-%s", consumer.getName(), topic));
-            consumers.add(subscriber);
-            ActorRef mediator = DistributedPubSubExtension.get(system).mediator();
-            mediator.tell(new DistributedPubSubMediator.Put(subscriber), subscriber);
+    private class Listener<T> implements MessageListener<T> {
+        private final MessageConsumer consumer;
+
+        public Listener(MessageConsumer consumer) {
+            this.consumer = consumer;
+        }
+
+        @Override
+        public void onMessage(Message<T> message) {
+            if (this.consumer != null) {
+                if ( message != null && message.getSource() != null) {
+                    this.consumer.onMessage(message.getSource().toString(), message.getMessageObject());
+                }
+            }
         }
     }
 
-    public Task getTask(String taskName) throws ApplicationException {
-        return factory.build(taskName);
-    }
-
-    public Map<String, Task> getTasks(TaskType taskType) throws ApplicationException {
-        return factory.buildAll(taskType);
-    }
-
-    public StoreManager getStoreManager() {
-        return storeManager;
+    public void register(String topicName, MessageConsumer consumer) {
+        if (topicName != null && consumer != null) {
+            Listener listener = new Listener(consumer);
+            if ( instance != null) {
+                ITopic topic = instance.getTopic(topicName);
+                if ( topic != null) {
+                    topic.addMessageListener(listener);
+                }
+            }
+        }
     }
 
 

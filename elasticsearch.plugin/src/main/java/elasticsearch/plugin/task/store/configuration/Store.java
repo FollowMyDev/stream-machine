@@ -143,17 +143,17 @@ public class Store extends StoreBase implements ConfigurationStore {
     }
 
     @Override
-    public void deleteConfiguration(Configuration configuration) throws ApplicationException {
+    public void deleteConfiguration(String name) throws ApplicationException {
         Client client = storeManager.getClient();
         if (client == null) return;
-        DeleteResponse response = client.prepareDelete(Store.index, Store.type, configuration.getName())
+        DeleteResponse response = client.prepareDelete(Store.index, Store.type, name)
                 .execute()
                 .actionGet();
         if (response.isFound()) {
-            logger.info(String.format("Configuration %s is deleted", configuration.getName()));
+            logger.info(String.format("Configuration %s is deleted", name));
         }
         else {
-            logger.info(String.format("Configuration %s was not found", configuration.getName()));
+            logger.info(String.format("Configuration %s was not found", name));
         }
     }
 

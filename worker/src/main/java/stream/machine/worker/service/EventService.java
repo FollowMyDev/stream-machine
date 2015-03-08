@@ -1,48 +1,44 @@
 package stream.machine.worker.service;
 
-import akka.util.Timeout;
 import com.codahale.metrics.annotation.Timed;
-import scala.concurrent.Await;
-import scala.concurrent.duration.Duration;
+import stream.machine.core.communication.MessageConsumer;
 import stream.machine.core.configuration.Configuration;
 import stream.machine.core.exception.ApplicationException;
 import stream.machine.core.manager.ManageableBase;
 import stream.machine.core.model.Event;
-import stream.machine.core.monitor.ConfigurationMessage;
-import stream.machine.core.monitor.Message;
-import stream.machine.core.monitor.MonitorConsumer;
+import stream.machine.core.store.EventStore;
 import stream.machine.core.stream.StreamManager;
 import stream.machine.core.task.Task;
 import stream.machine.core.task.TaskFactory;
 import stream.machine.core.task.TaskType;
 
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Path("/event")
 @Produces(MediaType.APPLICATION_JSON)
-public class EventService extends ManageableBase implements MonitorConsumer {
+public class EventService extends ManageableBase implements MessageConsumer {
     private Map<String, AtomicReference<Task>> tasks;
     private final int timeoutInSeconds;
     private final TaskFactory taskFactory;
+    private final EventStore eventStore;
 
     public EventService(StreamManager streamManager, int timeoutInSeconds) {
         super("EventService");
         this.timeoutInSeconds = timeoutInSeconds;
         this.tasks = new ConcurrentHashMap<String, AtomicReference<Task>>();
         if (streamManager != null) {
+            this.eventStore = streamManager.getStoreManager().getEventStore();
             this.taskFactory = streamManager.getTaskFactory();
             register(streamManager);
             try {
                 for (TaskType type : TaskType.values()) {
-                    Map<String, Task> typedTasks = streamManager.getTasks(type);
+                    Map<String, Task> typedTasks = streamManager.getTaskFactory().buildAll(type);
                     if (typedTasks != null && typedTasks.size() > 0) {
                         for (Map.Entry<String, Task> typedTask : typedTasks.entrySet()) {
                             this.tasks.put(typedTask.getKey(), new AtomicReference<Task>(typedTask.getValue()));
@@ -54,6 +50,7 @@ public class EventService extends ManageableBase implements MonitorConsumer {
             }
 
         } else {
+            this.eventStore = null;
             this.tasks = null;
             this.taskFactory = null;
         }
@@ -62,14 +59,14 @@ public class EventService extends ManageableBase implements MonitorConsumer {
     @POST
     @Timed
     @Path("/process/{task}")
-    public Event transform(@PathParam("task") String taskName, Event event) throws ApplicationException {
+    public Event process(@PathParam("task") String taskName, Event event) throws ApplicationException {
         return process(event, taskName);
     }
 
     @POST
     @Timed
     @Path("/processMultiple/{task}")
-    public List<Event> transformMultiple(@PathParam("task") String taskName, List<Event> events) throws ApplicationException {
+    public List<Event> processMultiple(@PathParam("task") String taskName, List<Event> events) throws ApplicationException {
         return processMultiple(events, taskName);
     }
 
@@ -92,18 +89,16 @@ public class EventService extends ManageableBase implements MonitorConsumer {
     }
 
     @Override
-    public void onMessage(Message message) {
-        if (message != null) {
-            if (message instanceof ConfigurationMessage) {
-                ConfigurationMessage configurationMessage = (ConfigurationMessage) message;
-                if (configurationMessage.getConfiguration() != null) {
-                    if (configurationMessage.getSubject() == ServiceTopics.TaskConfigurationCreated) {
-                        createTask(configurationMessage.getConfiguration());
-                    } else if (configurationMessage.getSubject() == ServiceTopics.TaskConfigurationUpdated) {
-                        updateTask(configurationMessage.getConfiguration());
-                    } else if (configurationMessage.getSubject() == ServiceTopics.TaskConfigurationUpdated) {
-                        deleteTask(configurationMessage.getConfiguration());
-                    }
+    public <T> void onMessage(String topicName, T data) {
+        if (data != null) {
+            if (data instanceof Configuration) {
+                Configuration configuration = (Configuration) data;
+                if (topicName == ServiceTopics.TaskConfigurationCreated) {
+                    createTask(configuration);
+                } else if (topicName == ServiceTopics.TaskConfigurationUpdated) {
+                    updateTask(configuration);
+                } else if (topicName == ServiceTopics.TaskConfigurationUpdated) {
+                    deleteTask(configuration);
                 }
             }
         }
@@ -147,12 +142,11 @@ public class EventService extends ManageableBase implements MonitorConsumer {
 
     private Event process(Event event, String taskName) throws ApplicationException {
         if (tasks != null) {
-            Timeout timeout = new Timeout(Duration.create(timeoutInSeconds, "seconds"));
             try {
                 if (tasks.containsKey(taskName)) {
                     Task task = tasks.get(taskName).get();
                     if (task != null) {
-                        return Await.result(task.process(event), timeout.duration());
+                        return task.process(event).get(timeoutInSeconds, TimeUnit.SECONDS);
                     }
                 }
             } catch (Exception error) {
@@ -165,12 +159,11 @@ public class EventService extends ManageableBase implements MonitorConsumer {
 
     private List<Event> processMultiple(List<Event> events, String taskName) throws ApplicationException {
         if (tasks != null) {
-            Timeout timeout = new Timeout(Duration.create(timeoutInSeconds, "seconds"));
             try {
                 if (tasks.containsKey(taskName)) {
                     Task task = tasks.get(taskName).get();
                     if (task != null) {
-                        return Await.result(task.processMultiple(events), timeout.duration());
+                        return task.processMultiple(events).get(timeoutInSeconds, TimeUnit.SECONDS);
                     }
                 }
             } catch (Exception error) {

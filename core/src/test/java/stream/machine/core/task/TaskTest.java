@@ -12,8 +12,7 @@ import java.util.Map;
 
 public class TaskTest extends ManageableBase{
 
-
-    StreamManager streamManager;
+    protected StreamManager streamManager;
 
     public TaskTest() {
         super("TaskTest");
@@ -43,7 +42,7 @@ public class TaskTest extends ManageableBase{
     public void testFullLifecycle() throws Exception {
         Assert.assertNotNull(streamManager);
         try {
-            Map<String,Task> tasks = streamManager.getTasks(TaskType.Transform);
+            Map<String,Task> tasks = streamManager.getTaskFactory().buildAll(TaskType.Transform);
             Assert.assertNotNull(tasks);
             Assert.assertEquals(2,tasks.size());
             Assert.assertTrue(tasks.containsKey("TaskA"));
@@ -58,7 +57,7 @@ public class TaskTest extends ManageableBase{
         StoreManager storeManager = new MemoryStoreManager();
         storeManager.getConfigurationStore().saveConfiguration(TransformerConfigurationTest.build("TaskA"));
         storeManager.getConfigurationStore().saveConfiguration(TransformerConfigurationTest.build("TaskB"));
-        streamManager = new StreamManager(storeManager,"[\"akka.tcp://StreamManager@localhost:2551\",\"akka.tcp://StreamManager@localhost:2552\"]","localhost",2550);
+        streamManager = new StreamManager(storeManager,null,"127.0.0.1",0, 2);
         streamManager.start();
     }
 

@@ -1,6 +1,5 @@
 package stream.machine.core.configuration;
 
-import scala.Serializable;
 import stream.machine.core.task.TaskType;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -8,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Created by Stephane on 18/01/2015.
  */
-public class Configuration extends ConcurrentHashMap<String, Object> implements Serializable {
+public class Configuration extends ConcurrentHashMap<String, Object> {
 
     public static String name = "name";
     public static String type = "type";
